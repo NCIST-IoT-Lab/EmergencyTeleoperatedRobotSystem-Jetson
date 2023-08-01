@@ -35,12 +35,12 @@ find_package(jsoncpp REQUIRED)
 
 add_executable(EmergencyTeleoperatedRobotSystem
         src/EmergencyTeleoperatedRobotSystem.cpp 
-        src/CasAzureKinectExtrinsics.cpp 
-        src/CasSoundSourceLocalization.cpp
-        src/CasAzureKinect.cpp 
-        src/CasUtility.cpp
-        src/CasBot.cpp
-        src/CasNetwork.cpp
+        src/AzureKinectExtrinsics.cpp 
+        src/SoundSourceLocalization.cpp
+        src/AzureKinect.cpp 
+        src/Utility.cpp
+        src/Bot.cpp
+        src/Network.cpp
         ${PROTO_SRCS} 
         ${PROTO_HDRS} 
         )

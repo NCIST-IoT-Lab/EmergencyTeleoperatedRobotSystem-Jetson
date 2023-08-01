@@ -3,10 +3,10 @@
 //
 // 读取配置文件
 
-#include "CasUtility.h"
+#include "Utility.h"
 
 using namespace std;
-using namespace cas::utility;
+using namespace etrs::utility;
 
 void tirm(string &str) {
     str.erase(0, str.find_first_not_of(" "));

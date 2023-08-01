@@ -26,7 +26,7 @@
 #include <boost/archive/text_oarchive.hpp>
 
 // CasWebSocket
-#include "CasWebSocket.h"
+#include "WebSocket.h"
 
 // 定义点云类型
 typedef pcl::PointXYZRGB PointT;

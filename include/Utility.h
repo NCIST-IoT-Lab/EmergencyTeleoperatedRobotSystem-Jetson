@@ -30,7 +30,7 @@ using namespace std;
 #define COUT_MSG_BOLD_ETRS_SUCCESS COUT_GREEN << COUT_BOLD << "[ETRS SUCCESS] " << COUT_RESET
 #define COUT_MSG_BOLD_ETRS_WARNING COUT_YELLOW << COUT_BOLD << "[ETRS WARNING] " << COUT_RESET
 
-namespace cas {
+namespace etrs {
     namespace utility {
         // 读取配置
         class Config {
@@ -92,6 +92,6 @@ namespace cas {
         };
 
     } // namespace utility
-} // namespace cas
+} // namespace etrs
 
 #endif

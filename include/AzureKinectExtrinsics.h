@@ -10,13 +10,13 @@
 #include <k4a/k4a.hpp>
 
 #include <Eigen/Core>
-#include <CasUtility.h>
+#include <Utility.h>
 
 using namespace std;
-using namespace cas::utility;
+using namespace etrs::utility;
 
 //打开 Azure Kinect 设备
-namespace cas {
+namespace etrs{
     // C++:
     //    k4a::device openAzureKinectDevice();
     bool openAzureKinectDevice(k4a_device_t *device);
@@ -49,7 +49,7 @@ namespace cas {
 
     // 角度转旋转矩阵
     Eigen::Matrix3d eulerAngle2RotationMatrix(const EulerAngle &angle);
-}// namespace cas
+}// namespace etrs
 
 
 #endif//_CASAZUREKINECTEXTRINSICS_H_

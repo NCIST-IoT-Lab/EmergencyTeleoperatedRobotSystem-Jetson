@@ -6,11 +6,11 @@
 #define _CASAZUREKINECT_H_
 
 #include <k4a/k4a.hpp>
-#include <CasUtility.h>
+#include <Utility.h>
 
-using namespace cas::utility;
+using namespace etrs::utility;
 
-namespace cas {
+namespace etrs{
     namespace kinect {
 
         // 检测Kinect数量是否大于某个值

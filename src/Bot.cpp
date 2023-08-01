@@ -1,4 +1,4 @@
-#include "CasBot.h"
+#include "Bot.h"
 
 #include <cmath>
 #include <iostream>
@@ -91,7 +91,7 @@ int serialTX(int fd, ComuType comutype, unsigned char databuff[]) {
     return ret;
 }
 
-cas::bot::BotArm::BotArm(string serial_port_name = DEFAULT_SERIAL_PORT_NAME) {
+etrs::bot::BotArm::BotArm(string serial_port_name = DEFAULT_SERIAL_PORT_NAME) {
     struct termios newtio;
     tcgetattr(this->fd, &newtio);
     newtio.c_cflag &= ~CSIZE;         // 数据位屏蔽 将c_cflag全部清零
@@ -126,7 +126,7 @@ cas::bot::BotArm::BotArm(string serial_port_name = DEFAULT_SERIAL_PORT_NAME) {
     this->gripper_buffer[6] = 0xFA;
 }
 
-bool cas::bot::BotArm::reset() {
+bool etrs::bot::BotArm::reset() {
     unsigned char databuff[16] = {0};
     memset(databuff, 0, 16);                      // 清空数组
     databuff[12] = 0x1e;                          // 速度
@@ -134,19 +134,19 @@ bool cas::bot::BotArm::reset() {
     return true;
 }
 
-bool cas::bot::BotArm::execute(const char *data_buffer, int length) {
+bool etrs::bot::BotArm::execute(const char *data_buffer, int length) {
     if (write(this->fd, data_buffer, length) < 0) {
         return false;
     }
     return true;
 }
 
-int cas::bot::BotArm::recvData(unsigned char *recv_buffer, const int recv_length) {
+int etrs::bot::BotArm::recvData(unsigned char *recv_buffer, const int recv_length) {
     int len = -1;
     while ((len = read(this->fd, recv_buffer, recv_length)) < 0)
         ;
     switch (recv_buffer[3]) { // 数据帧
-        case cas::bot::BotArm::DataSet::ALL_ANGLE: {
+        case etrs::bot::BotArm::DataSet::ALL_ANGLE: {
             // 计算方法：角度值低位 + 角度高位值乘以256 先判断是否大于33000，
             //         如果大于33000就再减去65536，最后除以100，如果小于33000就直接除以100
             int angles[6];
@@ -159,7 +159,7 @@ int cas::bot::BotArm::recvData(unsigned char *recv_buffer, const int recv_length
             }
             break;
         }
-        case cas::bot::BotArm::DataSet::ALL_COORD: {
+        case etrs::bot::BotArm::DataSet::ALL_COORD: {
 
             break;
         }
@@ -170,28 +170,28 @@ int cas::bot::BotArm::recvData(unsigned char *recv_buffer, const int recv_length
     return len;
 }
 
-int getCommand(cas::bot::BotArm::CommandSet command_type, char *&command) {
+int getCommand(etrs::bot::BotArm::CommandSet command_type, char *&command) {
     int cmd_len = 1;
     switch (command_type) {
-        case cas::bot::BotArm::CommandSet::READ_ANGLE: {
+        case etrs::bot::BotArm::CommandSet::READ_ANGLE: {
             cmd_len = 2;
             command = new char[cmd_len];
             command[0] = cmd_len;
-            command[1] = cas::bot::BotArm::CommandSet::READ_ANGLE;
+            command[1] = etrs::bot::BotArm::CommandSet::READ_ANGLE;
             break;
         }
-        case cas::bot::BotArm::CommandSet::READ_COORD: {
+        case etrs::bot::BotArm::CommandSet::READ_COORD: {
             cmd_len = 2;
             command = new char[cmd_len];
             command[0] = cmd_len;
-            command[1] = cas::bot::BotArm::CommandSet::READ_COORD;
+            command[1] = etrs::bot::BotArm::CommandSet::READ_COORD;
             break;
         }
-        case cas::bot::BotArm::CommandSet::FREE_MODE: {
+        case etrs::bot::BotArm::CommandSet::FREE_MODE: {
             cmd_len = 2;
             command = new char[cmd_len];
             command[0] = cmd_len;
-            command[1] = cas::bot::BotArm::CommandSet::FREE_MODE;
+            command[1] = etrs::bot::BotArm::CommandSet::FREE_MODE;
             break;
         }
         default:
@@ -202,7 +202,7 @@ int getCommand(cas::bot::BotArm::CommandSet command_type, char *&command) {
     return cmd_len;
 }
 
-bool cas::bot::BotArm::sendCommand(cas::bot::BotArm::CommandSet command_type) {
+bool etrs::bot::BotArm::sendCommand(etrs::bot::BotArm::CommandSet command_type) {
     char *command;
     int command_length = getCommand(command_type, command);
     memcpy(this->command_buffer + 2, command, command_length);
@@ -214,17 +214,17 @@ bool cas::bot::BotArm::sendCommand(cas::bot::BotArm::CommandSet command_type) {
     return execute(this->command_buffer, command_length + 3);
 }
 
-bool cas::bot::BotArm::openGripper(const char value) {
+bool etrs::bot::BotArm::openGripper(const char value) {
     this->gripper_buffer[4] = value;
     return execute(this->gripper_buffer, 7);
 }
 
-bool cas::bot::BotArm::closeGripper() {
+bool etrs::bot::BotArm::closeGripper() {
     this->gripper_buffer[4] = 0x00;
     return execute(this->gripper_buffer, 7);
 }
 
-cas::bot::STM32::STM32(string serial_port_name) {
+etrs::bot::STM32::STM32(string serial_port_name) {
     struct termios newtio;
     tcgetattr(this->fd, &newtio);
     newtio.c_cflag &= ~CSIZE;         // 数据位屏蔽 将c_cflag全部清零
@@ -252,23 +252,23 @@ cas::bot::STM32::STM32(string serial_port_name) {
     Debug::CoutSuccess("STM32设备初始化成功！");
 }
 
-bool cas::bot::STM32::sendData(unsigned char *send_buffer, const int send_length) {
+bool etrs::bot::STM32::sendData(unsigned char *send_buffer, const int send_length) {
     if (write(this->fd, send_buffer, send_length) < 0) {
         return false;
     }
     return true;
 }
 
-int cas::bot::STM32::recvData(unsigned char *recv_buffer, const int recv_length) {
+int etrs::bot::STM32::recvData(unsigned char *recv_buffer, const int recv_length) {
     int len = -1;
     while ((len = read(this->fd, recv_buffer, recv_length)) < 0)
         ;
     return len;
 }
 
-cas::bot::BotMotor::BotMotor(string serial_port_name = DEFAULT_SERIAL_PORT_NAME) : STM32(serial_port_name) {
+etrs::bot::BotMotor::BotMotor(string serial_port_name = DEFAULT_SERIAL_PORT_NAME) : STM32(serial_port_name) {
     this->buffer[0] = 0xFF; //包头
-    this->buffer[1] = cas::bot::BotMotor::CommandSet::MOTOR;
+    this->buffer[1] = etrs::bot::BotMotor::CommandSet::MOTOR;
     this->buffer[2] = 0x00; //方向
     this->buffer[3] = 0x00; //角度高位
     this->buffer[4] = 0x00; //角度低位
@@ -277,7 +277,7 @@ cas::bot::BotMotor::BotMotor(string serial_port_name = DEFAULT_SERIAL_PORT_NAME)
     this->buffer[7] = 0xFE; //包尾
 }
 
-bool cas::bot::BotMotor::rotate(string direction, std::function<void()> onRotated) {
+bool etrs::bot::BotMotor::rotate(string direction, std::function<void()> onRotated) {
     if (onRotated != nullptr) {
         onRotated();
     }
@@ -301,7 +301,7 @@ bool cas::bot::BotMotor::rotate(string direction, std::function<void()> onRotate
     return false;
 }
 
-// bool cas::bot::rotateMotor(int fd, string direction) {
+// bool etrs::bot::rotateMotor(int fd, string direction) {
 //     if (direction == "F" || direction == "R") {
 //         char buffer[9];
 //         buffer[0] = '@';
@@ -322,7 +322,7 @@ bool cas::bot::BotMotor::rotate(string direction, std::function<void()> onRotate
 //     return true;
 // }
 
-// bool cas::bot::forwardRotateMotor(int fd) {
+// bool etrs::bot::forwardRotateMotor(int fd) {
 //     char buffer[9];
 //     buffer[0] = '@';
 //     buffer[1] = 'F';
@@ -339,7 +339,7 @@ bool cas::bot::BotMotor::rotate(string direction, std::function<void()> onRotate
 //     return true;
 // }
 
-// bool cas::bot::reverseRotateMotor(int fd) {
+// bool etrs::bot::reverseRotateMotor(int fd) {
 //     char buffer[9];
 //     buffer[0] = '@';
 //     buffer[1] = 'R';
@@ -356,7 +356,7 @@ bool cas::bot::BotMotor::rotate(string direction, std::function<void()> onRotate
 //     return true;
 // }
 
-cas::bot::BotCar::BotCar(string serial_port_name, const char speed_value, float scale) {
+etrs::bot::BotCar::BotCar(string serial_port_name, const char speed_value, float scale) {
     struct termios newtio;
     tcgetattr(this->fd, &newtio);
     newtio.c_cflag &= ~CSIZE;
@@ -385,14 +385,14 @@ cas::bot::BotCar::BotCar(string serial_port_name, const char speed_value, float 
     setSpeed(speed_value, scale);
 }
 
-bool cas::bot::BotCar::sendData(unsigned char *send_buffer, const int send_length) {
+bool etrs::bot::BotCar::sendData(unsigned char *send_buffer, const int send_length) {
     if (write(this->fd, send_buffer, send_length) < 0) {
         return false;
     }
     return true;
 }
 
-int cas::bot::BotCar::recvData(unsigned char *recv_buffer, const int recv_length) {
+int etrs::bot::BotCar::recvData(unsigned char *recv_buffer, const int recv_length) {
     int len = -1;
     while ((len = read(this->fd, recv_buffer, recv_length)) < 0)
         ;
@@ -409,7 +409,7 @@ int cas::bot::BotCar::recvData(unsigned char *recv_buffer, const int recv_length
  * 旋转的角速度可以通过两个轮子的速度差除以两个轮子的轴距来计算。
  * 已知小车轮距为 53cm，即旋转角速度 = abs(left_speed - right_speed) / 53。
  */
-void cas::bot::BotCar::setSpeed(const char speed_value, float scale) {
+void etrs::bot::BotCar::setSpeed(const char speed_value, float scale) {
     this->buffer[0] = 0xff;
     this->buffer[1] = 0xfe;
     this->buffer[2] = speed_value;
@@ -440,19 +440,19 @@ void cas::bot::BotCar::setSpeed(const char speed_value, float scale) {
     Debug::CoutInfo("小车旋转角速度（deg/s）：{}", this->angle_speed);
 }
 
-bool cas::bot::BotCar::moveForward() {
+bool etrs::bot::BotCar::moveForward() {
     this->buffer[4] = 0x01;
     this->buffer[5] = 0x01;
     return sendData(this->buffer, 10);
 }
-bool cas::bot::BotCar::moveForwardTime(float time_s) {
+bool etrs::bot::BotCar::moveForwardTime(float time_s) {
     if (!moveForward()) {
         return false;
     }
     this_thread::sleep_for(chrono::milliseconds((int)(time_s * 1000)));
     return stopCar();
 }
-bool cas::bot::BotCar::moveForwardDistance(float distance) {
+bool etrs::bot::BotCar::moveForwardDistance(float distance) {
     if (distance < 0) {
         return false;
     } else if (distance == 0) {
@@ -461,19 +461,19 @@ bool cas::bot::BotCar::moveForwardDistance(float distance) {
     return moveForwardTime(distance / this->speed);
 }
 
-bool cas::bot::BotCar::moveBackward() {
+bool etrs::bot::BotCar::moveBackward() {
     this->buffer[4] = 0x00;
     this->buffer[5] = 0x00;
     return sendData(this->buffer, 10);
 }
-bool cas::bot::BotCar::moveBackwardTime(float time_s) {
+bool etrs::bot::BotCar::moveBackwardTime(float time_s) {
     if (!moveBackward()) {
         return false;
     }
     this_thread::sleep_for(chrono::milliseconds((int)(time_s * 1000)));
     return stopCar();
 }
-bool cas::bot::BotCar::moveBackwardDistance(float distance) {
+bool etrs::bot::BotCar::moveBackwardDistance(float distance) {
     if (distance < 0) {
         return false;
     } else if (distance == 0) {
@@ -482,46 +482,46 @@ bool cas::bot::BotCar::moveBackwardDistance(float distance) {
     return moveBackwardTime(distance / this->speed);
 }
 
-bool cas::bot::BotCar::turnLeft() {
+bool etrs::bot::BotCar::turnLeft() {
     this->buffer[4] = 0x00;
     this->buffer[5] = 0x01;
     return sendData(this->buffer, 10);
 }
-bool cas::bot::BotCar::turnLeftTime(float time_s) {
+bool etrs::bot::BotCar::turnLeftTime(float time_s) {
     if (!turnLeft()) {
         return false;
     }
     this_thread::sleep_for(chrono::milliseconds((int)(time_s * 1000)));
     return stopCar();
 }
-bool cas::bot::BotCar::turnLeftAngle(float angle) {
+bool etrs::bot::BotCar::turnLeftAngle(float angle) {
     if (angle <= 0) {
         return false;
     }
     return turnLeftTime(angle / this->angle_speed);
 }
 
-bool cas::bot::BotCar::turnRight() {
+bool etrs::bot::BotCar::turnRight() {
     this->buffer[4] = 0x01;
     this->buffer[5] = 0x00;
     return sendData(this->buffer, 10);
 }
 
-bool cas::bot::BotCar::turnRightTime(float time_s) {
+bool etrs::bot::BotCar::turnRightTime(float time_s) {
     if (!turnRight()) {
         return false;
     }
     this_thread::sleep_for(chrono::milliseconds((int)(time_s * 1000)));
     return stopCar();
 }
-bool cas::bot::BotCar::turnRightAngle(float angle) {
+bool etrs::bot::BotCar::turnRightAngle(float angle) {
     if (angle <= 0) {
         return false;
     }
     return turnRightTime(angle / this->angle_speed);
 }
 
-bool cas::bot::BotCar::turnAngle(float angle) {
+bool etrs::bot::BotCar::turnAngle(float angle) {
     if (angle < 0) {
         return turnLeftAngle(-angle);
     } else if (angle > 0) {
@@ -530,7 +530,7 @@ bool cas::bot::BotCar::turnAngle(float angle) {
     return true;
 }
 
-bool cas::bot::BotCar::autoTurnByAngle(float angle) {
+bool etrs::bot::BotCar::autoTurnByAngle(float angle) {
     if (angle > 0) {
         this->buffer2[4] = 0x01; // 大于0左转，小于0右转
         this->buffer2[5] = (int)angle - 2;
@@ -543,7 +543,7 @@ bool cas::bot::BotCar::autoTurnByAngle(float angle) {
     return sendData(this->buffer2, 10);
 }
 
-bool cas::bot::BotCar::autoTurnByAngleAndSpeed(float angle, char left_speed_value, char right_speed_value) {
+bool etrs::bot::BotCar::autoTurnByAngleAndSpeed(float angle, char left_speed_value, char right_speed_value) {
     int left_temp = this->buffer2[2];
     int right_temp = this->buffer2[3];
     this->buffer2[2] = left_speed_value;
@@ -556,7 +556,7 @@ bool cas::bot::BotCar::autoTurnByAngleAndSpeed(float angle, char left_speed_valu
     return true;
 }
 
-bool cas::bot::BotCar::stopCar() {
+bool etrs::bot::BotCar::stopCar() {
     int left_temp = this->buffer[2];
     int right_temp = this->buffer[3];
     this->buffer[2] = 0x00;
@@ -569,7 +569,7 @@ bool cas::bot::BotCar::stopCar() {
     return true;
 }
 
-bool cas::bot::BotCar::executeMoveSequence(float *seq, int seq_length) {
+bool etrs::bot::BotCar::executeMoveSequence(float *seq, int seq_length) {
     float flag = seq[0];
     if (flag == 1) { // 先移动
         // 奇数下标为移动，偶数下标为旋转
@@ -604,9 +604,9 @@ bool cas::bot::BotCar::executeMoveSequence(float *seq, int seq_length) {
     return true;
 }
 
-cas::bot::BotLed::BotLed(string serial_port_name) {
+etrs::bot::BotLed::BotLed(string serial_port_name) {
     this->buffer[0] = 0xFF;
-    this->buffer[1] = cas::bot::BotLed::CommandSet::LED;
+    this->buffer[1] = etrs::bot::BotLed::CommandSet::LED;
     this->buffer[2] = 0x00; //颜色
     this->buffer[3] = 0x00; //r
     this->buffer[4] = 0x00; //g
@@ -615,9 +615,9 @@ cas::bot::BotLed::BotLed(string serial_port_name) {
     this->buffer[7] = 0xFE;
 }
 
-bool cas::bot::BotLed::setLedColor(LedColor color, int r, int g, int b) {
+bool etrs::bot::BotLed::setLedColor(LedColor color, int r, int g, int b) {
     this->buffer[2] = color;
-    if (color == cas::bot::BotLed::LedColor::CUSTOM) {
+    if (color == etrs::bot::BotLed::LedColor::CUSTOM) {
         this->buffer[3] = r;
         this->buffer[4] = g;
         this->buffer[5] = b;

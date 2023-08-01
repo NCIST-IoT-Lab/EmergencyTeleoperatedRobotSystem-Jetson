@@ -1,7 +1,7 @@
 //
 // Create by HoChihchou on 2023/5/6
 //
-#include "CasSoundSourceLocalization.h"
+#include "SoundSourceLocalization.h"
 
 #include <cmath>
 #include <complex>
@@ -11,7 +11,7 @@
 #include <vector>
 
 using namespace std;
-using namespace cas::ssl;
+using namespace etrs::ssl;
 
 SoundSourceDetector::SoundSourceDetector(unsigned int smaple_rate = 44100, const int samples = 2205,
                                          const int channels = 7, string microphone_name = "plughw:2,0")

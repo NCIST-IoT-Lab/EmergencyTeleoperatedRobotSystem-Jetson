@@ -7,12 +7,12 @@
  * 捕获图像并记录 IMU 数据，利用 Open3D 实现三维重建。
  */
 
-#include "CasAzureKinect.h"
-#include "CasAzureKinectExtrinsics.h"
-#include "CasBot.h"
-#include "CasNetwork.h"
-#include "CasSoundSourceLocalization.h"
-#include "CasUtility.h"
+#include "AzureKinect.h"
+#include "AzureKinectExtrinsics.h"
+#include "Bot.h"
+#include "Network.h"
+#include "SoundSourceLocalization.h"
+#include "Utility.h"
 #include "DataMessage.pb.h"
 
 #include <iostream>
@@ -27,9 +27,9 @@
 
 using namespace std;
 using namespace open3d;
-using namespace cas::utility;
+using namespace etrs::utility;
 
-void onRotated(cas::utility::Config &config, string &FIRST_MOTOR_ROTATION) {
+void onRotated(etrs::utility::Config &config, string &FIRST_MOTOR_ROTATION) {
     Debug::CoutSuccess("舵机旋转成功");
     if (FIRST_MOTOR_ROTATION == "F") {
         FIRST_MOTOR_ROTATION = "R";
@@ -48,7 +48,7 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
     if (argc > 1) {
         config_file_path = argv[1];
     }
-    cas::utility::Config program_config(config_file_path);
+    etrs::utility::Config program_config(config_file_path);
 
     float INTERVAL_RADIAN = program_config.getFloat("interval_radian");
     float EXIT_RADIAN = program_config.getFloat("exit_radian");
@@ -89,13 +89,13 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
     k4a::device device;
     // k4a_device_t device;
 
-    cas::bot::BotArm bot_arm(BOT_ARM_SERIAL_PORT_NAME);
-    cas::bot::BotMotor bot_motor(STM32_SERIAL_PORT_NAME);
-    cas::bot::BotCar bot_car(BOT_CAR_SERIAL_PORT_NAME, (char)0x12, 0.62);
-    cas::bot::BotLed bot_led(STM32_SERIAL_PORT_NAME);
+    etrs::bot::BotArm bot_arm(BOT_ARM_SERIAL_PORT_NAME);
+    etrs::bot::BotMotor bot_motor(STM32_SERIAL_PORT_NAME);
+    etrs::bot::BotCar bot_car(BOT_CAR_SERIAL_PORT_NAME, (char)0x12, 0.62);
+    etrs::bot::BotLed bot_led(STM32_SERIAL_PORT_NAME);
 
     // 发现已连接的设备数
-    if (cas::kinect::checkKinectNum(1) == false) {
+    if (etrs::kinect::checkKinectNum(1) == false) {
         return 0;
     }
 
@@ -119,7 +119,7 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
     cout << "开启相机。" << endl;
 
     // 稳定化
-    cas::kinect::stabilizeCamera(device);
+    etrs::kinect::stabilizeCamera(device);
     cout << "------------------------------------" << endl;
     cout << "----- 成功启动 Azure Kinect DK -----" << endl;
     cout << "------------------------------------" << endl;
@@ -136,12 +136,12 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
     }
 
     // LED亮红
-    bot_led.setLedColor(cas::bot::BotLed::LedColor::RED);
+    bot_led.setLedColor(etrs::bot::BotLed::LedColor::RED);
 
     // 创建服务器等待连接
-    cas::net::Client client(SERVER_PORT, [&]() {
+    etrs::net::Client client(SERVER_PORT, [&]() {
         // LED亮绿
-        bot_led.setLedColor(cas::bot::BotLed::LedColor::GREEN);
+        bot_led.setLedColor(etrs::bot::BotLed::LedColor::GREEN);
     });
 
     // 定义互斥锁
@@ -163,19 +163,19 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
     bool need_reconnstrcution = true;
     bool flag_recording = true;
 
-    cas::proto::KinectMode::Mode kinect_mode = cas::proto::KinectMode::REAL_TIME;
+    etrs::proto::KinectMode::Mode kinect_mode = etrs::proto::KinectMode::REAL_TIME;
 
     // 声源定位线程
     thread ssl_thread([&]() {
         if (ENABLE_SOUND_SOURCE_LOCALIZATION) {
-            cas::ssl::SoundSourceDetector sound_source_detector(SAMPLE_RATE, SAMPLES, CHANNELS, MICROPHONE_NAME);
+            etrs::ssl::SoundSourceDetector sound_source_detector(SAMPLE_RATE, SAMPLES, CHANNELS, MICROPHONE_NAME);
             sound_source_detector.start();
             while (true) {
                 // lock_guard<mutex> lock(ssl_mutex);
                 Eigen::Vector3f sound_source = sound_source_detector.locate();
-                cas::proto::DataMessage data_message;
-                data_message.set_type(cas::proto::DataMessage::SOUND_SOURCE);
-                cas::proto::SoundSource *sound_source_message = data_message.mutable_sound_source();
+                etrs::proto::DataMessage data_message;
+                data_message.set_type(etrs::proto::DataMessage::SOUND_SOURCE);
+                etrs::proto::SoundSource *sound_source_message = data_message.mutable_sound_source();
                 sound_source_message->set_x(sound_source[0]);
                 sound_source_message->set_y(sound_source[1]);
                 sound_source_message->set_z(sound_source[2]);
@@ -202,12 +202,12 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
     thread receive_client_thread([&]() {
         char client_buffer[1024];
         while (true) {
-            cas::proto::DataMessage data_message;
+            etrs::proto::DataMessage data_message;
             if (!client.recvMessage(data_message)) {
                 continue;
             }
             switch ((int)data_message.type()) {
-                case (int)cas::proto::DataMessage::BOT_MOTOR: {
+                case (int)etrs::proto::DataMessage::BOT_MOTOR: {
                     Debug::CoutSuccess("收到重建请求");
                     // recorder = io::AzureKinectRecorder(sensor_config, 0);
                     // io::AzureKinectRecorder recorder(sensor_config, 0);
@@ -223,7 +223,7 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                     need_reconnstrcution = true;
                     break;
                 }
-                case (int)cas::proto::DataMessage::BOT_CAR: {
+                case (int)etrs::proto::DataMessage::BOT_CAR: {
                     Debug::CoutSuccess("收到机器人数据");
                     int seq_length = data_message.bot_car().move_sequence_size();
                     int sequence_flag = data_message.bot_car().move_sequence(0);
@@ -237,7 +237,7 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                     bot_car.executeMoveSequence(seq, seq_length);
                     break;
                 }
-                case (int)cas::proto::DataMessage::BOT_ARM: {
+                case (int)etrs::proto::DataMessage::BOT_ARM: {
                     Debug::CoutSuccess("收到机械臂数据");
                     int length = data_message.bot_arm().data_buffer().length();
                     // int angles[6];
@@ -251,10 +251,10 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                     //     }
                     // }
                     bot_arm.execute(data_message.bot_arm().data_buffer().data(), length);
-                    bot_arm.sendCommand(cas::bot::BotArm::CommandSet::READ_ANGLE);
+                    bot_arm.sendCommand(etrs::bot::BotArm::CommandSet::READ_ANGLE);
                     break;
                 }
-                case (int)cas::proto::DataMessage::BOT_GRIPPER: {
+                case (int)etrs::proto::DataMessage::BOT_GRIPPER: {
                     Debug::CoutSuccess("收到机械臂夹爪数据");
                     int status = data_message.bot_gripper().status();
                     if (status == 1) {
@@ -264,7 +264,7 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                     }
                     break;
                 }
-                case (int)cas::proto::DataMessage::OTHER:
+                case (int)etrs::proto::DataMessage::OTHER:
                 default:
                     Debug::CoutError("未知的客户端数据类型");
                     break;
@@ -294,9 +294,9 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                 case 'T': {
                     float humi = stm32_buffer[1] + stm32_buffer[2] / 10.0;
                     float temp = stm32_buffer[3] + stm32_buffer[4] / 10.0;
-                    cas::proto::DataMessage data_message;
-                    data_message.set_type(cas::proto::DataMessage::TEMP_AND_HUMI);
-                    cas::proto::TempAndHumi *temp_and_humi = data_message.mutable_temp_and_humi();
+                    etrs::proto::DataMessage data_message;
+                    data_message.set_type(etrs::proto::DataMessage::TEMP_AND_HUMI);
+                    etrs::proto::TempAndHumi *temp_and_humi = data_message.mutable_temp_and_humi();
                     temp_and_humi->set_humi(humi);
                     temp_and_humi->set_temp(temp);
                     unique_lock<mutex> lock(client_mutex);
@@ -345,7 +345,7 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
 
     while (true) {
         switch (kinect_mode) {
-            case cas::proto::KinectMode::RECONSTRCUTION: {
+            case etrs::proto::KinectMode::RECONSTRCUTION: {
                 Debug::CoutInfo("切换至重建模式");
 
                 if (!need_reconnstrcution) {
@@ -511,7 +511,7 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                     break;
                 }
             }
-            case cas::proto::KinectMode::REAL_TIME: {
+            case etrs::proto::KinectMode::REAL_TIME: {
                 Debug::CoutInfo("切换至实时模式");
 
                 open3d::geometry::PointCloud cloud;
@@ -587,10 +587,10 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
 
                 if (IS_CREATE_SERVER) {
                     Debug::CoutDebug("开始发送数据");
-                    cas::proto::DataMessage data_message;
+                    etrs::proto::DataMessage data_message;
                     // 设置消息类型
-                    data_message.set_type(cas::proto::DataMessage::MESH);
-                    cas::proto::Mesh *mesh_message = data_message.mutable_mesh();
+                    data_message.set_type(etrs::proto::DataMessage::MESH);
+                    etrs::proto::Mesh *mesh_message = data_message.mutable_mesh();
                     // 顶点坐标
                     const vector<Eigen::Vector3d> &vertices = mesh->vertices_;
                     // 顶点索引
@@ -600,19 +600,19 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
 
                     int write_count = 0;
                     for (int i = 0; i < triangles.size(); i++) {
-                        cas::proto::V1 *v1 = mesh_message->add_v1();
+                        etrs::proto::V1 *v1 = mesh_message->add_v1();
                         int v1_index = triangles[i][0];
                         v1->set_x(vertices[v1_index][0]);
                         v1->set_y(vertices[v1_index][1]);
                         v1->set_z(vertices[v1_index][2]);
 
-                        cas::proto::V2 *v2 = mesh_message->add_v2();
+                        etrs::proto::V2 *v2 = mesh_message->add_v2();
                         int v2_index = triangles[i][1];
                         v2->set_x(vertices[v2_index][0]);
                         v2->set_y(vertices[v2_index][1]);
                         v2->set_z(vertices[v2_index][2]);
 
-                        cas::proto::V3 *v3 = mesh_message->add_v3();
+                        etrs::proto::V3 *v3 = mesh_message->add_v3();
                         int v3_index = triangles[i][2];
                         v3->set_x(vertices[v3_index][0]);
                         v3->set_y(vertices[v3_index][1]);

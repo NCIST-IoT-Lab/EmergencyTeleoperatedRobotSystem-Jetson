@@ -16,10 +16,10 @@
 #include <sys/select.h>
 #include <sys/socket.h>
 
-#include "CasUtility.h"
+#include "Utility.h"
 
 using namespace std;
-using namespace cas::utility;
+using namespace etrs::utility;
 
 // 通信指令帧的定义
 #define FLAG_START 0xfe
@@ -41,7 +41,7 @@ typedef unsigned char ComuType;
 #define WHEEL_D 20 // 单位厘米（cm）
 #define WHEEL_DISTANCE 53
 
-namespace cas {
+namespace etrs {
     namespace bot {
         // int initArm(string serial_port_name);
         // int resetCobot(int fd);
@@ -151,6 +151,6 @@ namespace cas {
             bool setLedColor(LedColor color, int r = 0, int g = 0, int b = 0);
         };
     } // namespace bot
-} // namespace cas
+} // namespace etrs
 
 #endif //_MYCOBOT_MAIN_H_

@@ -2,7 +2,7 @@
 // Created by Cassius0924 on 4/30/23.
 //
 
-#include "CasAzureKinect.h"
+#include "AzureKinect.h"
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -18,7 +18,7 @@
 
 using namespace std;
 
-bool cas::kinect::checkKinectNum(int num) {
+bool etrs::kinect::checkKinectNum(int num) {
     const uint32_t device_count = k4a::device::get_installed_count();
     if (0 == device_count) {
         Debug::CoutError("没有发现 Auzre Kinect。");
@@ -34,7 +34,7 @@ bool cas::kinect::checkKinectNum(int num) {
     return true;
 }
 
-bool cas::kinect::stabilizeCamera(k4a::device &device) {
+bool etrs::kinect::stabilizeCamera(k4a::device &device) {
     k4a::capture capture;
     int i_auto = 0;      // 用来稳定，类似自动曝光
     int i_auto_error = 0;// 统计自动曝光的失败次数
@@ -205,7 +205,7 @@ bool cas::kinect::stabilizeCamera(k4a::device &device) {
 // }
 
 // // 使用 Azure Kinect 的麦克风阵列进行声源定位
-// void cas::kinect::startSoundSourceLocalization() {
+// void etrs::kinect::startSoundSourceLocalization() {
 //     unsigned int sample_rate = 44100;                       // 采样率
 //     const int samples = 2205;                               // 每个周期的采样数
 //     const int channels = 7;                                 // 声道数

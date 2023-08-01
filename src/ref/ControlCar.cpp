@@ -1,6 +1,6 @@
-// #include "CasAzureKinect.h"
-#include "CasBot.h"
-#include "CasSoundSourceLocalization.h"
+// #include "AzureKinect.h"
+#include "Bot.h"
+#include "SoundSourceLocalization.h"
 
 #include <iostream>
 #include <ncurses.h>
@@ -11,8 +11,8 @@ using namespace std;
 
 int main() {
     // 控制小车移动
-    cas::bot::BotCar bot_car("/dev/ttyUSB1", (char)0x12, 0.62);
-    // int fd = cas::bot::initBotCar("/dev/ttyUSB1");
+    etrs::bot::BotCar bot_car("/dev/ttyUSB1", (char)0x12, 0.62);
+    // int fd = etrs::bot::initBotCar("/dev/ttyUSB1");
 
     unsigned char buffer[10] = {0};
     buffer[0] = 0xff;

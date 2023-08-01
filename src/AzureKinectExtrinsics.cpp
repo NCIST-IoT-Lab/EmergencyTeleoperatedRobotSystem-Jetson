@@ -13,13 +13,13 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-#include "CasAzureKinectExtrinsics.h"
+#include "AzureKinectExtrinsics.h"
 
 using namespace std;
 using namespace Eigen;
 
 //C++：
-//k4a::device cas::openAzureKinectDevice() {
+//k4a::device etrs::openAzureKinectDevice() {
 //    const uint32_t device_count = k4a::device::get_installed_count();
 //    if (device_count == 0) {
 //        cerr << "No k4a devices found!（未找到 K4a 设备）" << endl;
@@ -39,7 +39,7 @@ using namespace Eigen;
 //}
 
 //打开 Azure Kinect 设备
-bool cas::openAzureKinectDevice(k4a_device_t *device) {
+bool etrs::openAzureKinectDevice(k4a_device_t *device) {
     uint32_t device_count = k4a_device_get_installed_count();
     if (device_count == 0) {
         printf("No k4a devices found!（未找到 K4a 设备）\n");
@@ -58,7 +58,7 @@ bool cas::openAzureKinectDevice(k4a_device_t *device) {
 }
 
 //配置 Azure Kinect 设备
-//void cas::configureAzureKinectDevice(k4a::device &device, k4a_device_configuration_t config) {
+//void etrs::configureAzureKinectDevice(k4a::device &device, k4a_device_configuration_t config) {
 //    //设置设备的配置
 //    device.start_cameras(&config);
 //    //输出配置信息
@@ -71,7 +71,7 @@ bool cas::openAzureKinectDevice(k4a_device_t *device) {
 
 
 //输出配置信息
-bool cas::configureAzureKinectDevice(k4a_device_t device, k4a_device_configuration_t config) {
+bool etrs::configureAzureKinectDevice(k4a_device_t device, k4a_device_configuration_t config) {
     //设置设备的配置
     if (k4a_device_start_cameras(device, &config) != K4A_RESULT_SUCCEEDED) {
         printf("Failed to start cameras!（启动相机设备失败）\n");
@@ -88,7 +88,7 @@ bool cas::configureAzureKinectDevice(k4a_device_t device, k4a_device_configurati
 
 // 获取标定数据
 bool
-cas::getAzureKinectCalibration(k4a_device_t device, k4a_device_configuration_t config, k4a_calibration_t *calibration) {
+etrs::getAzureKinectCalibration(k4a_device_t device, k4a_device_configuration_t config, k4a_calibration_t *calibration) {
     if (k4a_device_get_calibration(device, config.depth_mode, config.color_resolution, calibration) !=
         K4A_RESULT_SUCCEEDED) {
         printf("Failed to get calibration!（获取标定数据失败）\n");
@@ -98,7 +98,7 @@ cas::getAzureKinectCalibration(k4a_device_t device, k4a_device_configuration_t c
 }
 
 // 获取捕获
-bool cas::getAzureKinectCapture(k4a_device_t device, k4a_capture_t *capture, int32_t timeout_in_ms) {
+bool etrs::getAzureKinectCapture(k4a_device_t device, k4a_capture_t *capture, int32_t timeout_in_ms) {
     int result = false;
     switch (k4a_device_get_capture(device, capture, timeout_in_ms)) {
         case K4A_WAIT_RESULT_SUCCEEDED:
@@ -115,7 +115,7 @@ bool cas::getAzureKinectCapture(k4a_device_t device, k4a_capture_t *capture, int
 }
 
 // 获取深度图
-bool cas::getAzureKinectDepthImage(k4a_capture_t capture, k4a_image_t *depth_image) {
+bool etrs::getAzureKinectDepthImage(k4a_capture_t capture, k4a_image_t *depth_image) {
     *depth_image = k4a_capture_get_depth_image(capture);
     if (*depth_image == 0) {
         printf("Failed to get depth image from capture!（从捕获中获取深度图失败）\n");
@@ -125,7 +125,7 @@ bool cas::getAzureKinectDepthImage(k4a_capture_t capture, k4a_image_t *depth_ima
 }
 
 // 获取彩色图
-bool cas::getAzureKinectColorImage(k4a_capture_t capture, k4a_image_t *color_image) {
+bool etrs::getAzureKinectColorImage(k4a_capture_t capture, k4a_image_t *color_image) {
     *color_image = k4a_capture_get_color_image(capture);
     if (*color_image == 0) {
         printf("Failed to get color image from capture!（从捕获中获取彩色图失败）\n");
@@ -135,7 +135,7 @@ bool cas::getAzureKinectColorImage(k4a_capture_t capture, k4a_image_t *color_ima
 }
 
 // 启动 IMU 传感器
-bool cas::startAzureKinectImu(k4a_device_t device) {
+bool etrs::startAzureKinectImu(k4a_device_t device) {
     bool result = false;
     switch (k4a_device_start_imu(device)) {
         case K4A_RESULT_SUCCEEDED:
@@ -149,7 +149,7 @@ bool cas::startAzureKinectImu(k4a_device_t device) {
 }
 
 // 获取IMU样本
-bool cas::getAzureKinectImuSample(k4a_device_t device, k4a_imu_sample_t *imu_sample, int32_t timeout_in_ms) {
+bool etrs::getAzureKinectImuSample(k4a_device_t device, k4a_imu_sample_t *imu_sample, int32_t timeout_in_ms) {
     bool result = false;
     switch (k4a_device_get_imu_sample(device, imu_sample, timeout_in_ms)) {
         case K4A_WAIT_RESULT_SUCCEEDED:
@@ -168,16 +168,16 @@ bool cas::getAzureKinectImuSample(k4a_device_t device, k4a_imu_sample_t *imu_sam
 
 //定义一个欧拉角类，用来表示姿态角
 //roll:绕x轴旋转的角度，pitch:绕y轴旋转的角度，yaw:绕z轴旋转的角度
-cas::EulerAngle::EulerAngle(double r, double p, double y) : roll(r), pitch(p), yaw(y) {}
+etrs::EulerAngle::EulerAngle(double r, double p, double y) : roll(r), pitch(p), yaw(y) {}
 
-cas::EulerAngle& cas::EulerAngle::operator=(const double v) {
+etrs::EulerAngle& etrs::EulerAngle::operator=(const double v) {
     roll = pitch = yaw = v;
     return *this;
 }
 // END: ed8c6549bwf9_impl//
 
 //定义一个函数，用来根据陀螺仪的数据和上一时刻的姿态，计算当前时刻的姿态
-cas::EulerAngle cas::calculateOrientation(double gx, double gy, double gz, double dt, const EulerAngle &prevAngle) {
+etrs::EulerAngle etrs::calculateOrientation(double gx, double gy, double gz, double dt, const EulerAngle &prevAngle) {
     //创建一个陀螺仪变换矩阵对象
     Matrix3d gyroMatrix;
     double sr = sin(prevAngle.roll);
@@ -206,10 +206,10 @@ cas::EulerAngle cas::calculateOrientation(double gx, double gy, double gz, doubl
     double yaw = prevAngle.yaw + dYaw;
 
     //返回当前时刻的欧拉角对象
-    return cas::EulerAngle(roll, pitch, yaw);    //单位：弧度，范围：-π~π。π
+    return etrs::EulerAngle(roll, pitch, yaw);    //单位：弧度，范围：-π~π。π
 }
 
-Matrix3d cas::eulerAngle2RotationMatrix(const EulerAngle &angle) {
+Matrix3d etrs::eulerAngle2RotationMatrix(const EulerAngle &angle) {
     Matrix3d rotationMatrix;
     rotationMatrix << (AngleAxisd(angle.roll, Vector3d::UnitX()) *
                       AngleAxisd(angle.pitch, Vector3d::UnitY()) *
@@ -275,14 +275,14 @@ Matrix3d cas::eulerAngle2RotationMatrix(const EulerAngle &angle) {
 
 //int main(int argc, char *argv[]) {
 //    // 初始化Azure Kinect设备
-//    k4a::device device = cas::openAzureKinectDevice();
+//    k4a::device device = etrs::openAzureKinectDevice();
 //
 //    // 配置Azure Kinect设备
 //    k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
 //    config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;       //NFOV
 //    config.color_resolution = K4A_COLOR_RESOLUTION_720P;    //720P
 //    config.camera_fps = K4A_FRAMES_PER_SECOND_30;           //30FPS
-//    cas::configureAzureKinectDevice(device, config);
+//    etrs::configureAzureKinectDevice(device, config);
 //
 //    device.start_imu();
 //
@@ -290,7 +290,7 @@ Matrix3d cas::eulerAngle2RotationMatrix(const EulerAngle &angle) {
 //    uint64_t dt;
 //
 //    // 通过陀螺仪数据计算出的欧拉角
-//    cas::EulerAngle prevAngle(0, 0, 0);
+//    etrs::EulerAngle prevAngle(0, 0, 0);
 //
 //    uint64_t temp = 0;
 //    // 持续输出设备的姿态信息

@@ -1,4 +1,4 @@
-#include "CasNetwork.h"
+#include "Network.h"
 
 using namespace std;
 
@@ -44,9 +44,9 @@ bool getLocalIp(char *ip) {
 /**
  * 创建服务器，阻塞进程，等待服务器连接。
  */
-cas::net::Client::Client(const int port, std::function<void()> onConnect) {
+etrs::net::Client::Client(const int port, std::function<void()> onConnect) {
 
-    // int cas::net::creatServerSocket(int port) {
+    // int etrs::net::creatServerSocket(int port) {
     int server_socket_fd = -1;
     this->fd = -1;
     struct sockaddr_in *addr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
@@ -107,7 +107,7 @@ cas::net::Client::Client(const int port, std::function<void()> onConnect) {
 }
 
 // 发送Protobuf消息到网络对端
-bool cas::net::Client::sendMessage(google::protobuf::Message &message) {
+bool etrs::net::Client::sendMessage(google::protobuf::Message &message) {
     ostringstream output_stream(ios::binary);
 
     int message_size = message.ByteSizeLong();
@@ -128,20 +128,20 @@ bool cas::net::Client::sendMessage(google::protobuf::Message &message) {
 }
 
 // 发送exit_mesh
-bool cas::net::Client::sendExitMeshMessage() {
-    cas::proto::DataMessage message;
-    message.set_type(cas::proto::DataMessage::EXIT_MESH);
+bool etrs::net::Client::sendExitMeshMessage() {
+    etrs::proto::DataMessage message;
+    message.set_type(etrs::proto::DataMessage::EXIT_MESH);
     return sendMessage(message);
 }
 
-int cas::net::Client::recvData(unsigned char *recv_buffer, const int recv_length) {
+int etrs::net::Client::recvData(unsigned char *recv_buffer, const int recv_length) {
     int len = -1;
     while ((len = recv(this->fd, recv_buffer, recv_length, 0)) < 0)
         ;
     return len;
 }
 
-bool cas::net::Client::recvMessage(cas::proto::DataMessage &message) {
+bool etrs::net::Client::recvMessage(etrs::proto::DataMessage &message) {
     unsigned char recv_buffer[1024];
     int len = recvData(recv_buffer, 1024);
     if (!message.ParseFromArray(recv_buffer, len)) {

@@ -9,12 +9,12 @@
 #include <Eigen/Dense>
 #include <alsa/asoundlib.h>
 #include <iostream>
-#include <CasUtility.h>
+#include <Utility.h>
 
 using namespace std;
-using namespace cas::utility;
+using namespace etrs::utility;
 
-namespace cas {
+namespace etrs {
     namespace ssl {
         class SoundSourceDetector {
         private:
@@ -41,6 +41,6 @@ namespace cas {
             Eigen::Vector3f locate();
         };
     }// namespace ssl
-}// namespace cas
+}// namespace etrs
 
 #endif//SOUND_SOURCE_LOCALIZATION_CASWEBSOCKET_H

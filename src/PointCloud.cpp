@@ -2,7 +2,7 @@
 // Created by root on 4/5/23.
 //
 
-#include "CasPointCloud.h"
+#include "PointCloud.h"
 
 #include <iostream>
 #include <vector>
@@ -17,7 +17,7 @@
 
 using namespace std;
 
-void cas::o3d::registration(std::shared_ptr<open3d::geometry::PointCloud> source, std::shared_ptr<open3d::geometry::PointCloud> target) {
+void etrs::o3d::registration(std::shared_ptr<open3d::geometry::PointCloud> source, std::shared_ptr<open3d::geometry::PointCloud> target) {
 
     double threshold = 1.0; // 移动范围的阀值
     Eigen::Matrix4d trans_init = Eigen::Matrix4d::Identity(); // 4x4 identity matrix，这是一个转换矩阵，象征着没有任何位移，没有任何旋转，我们输入这个矩阵为初始变换
@@ -33,15 +33,15 @@ void cas::o3d::registration(std::shared_ptr<open3d::geometry::PointCloud> source
 }
 
 
-void cas::o3d::add(std::shared_ptr<open3d::geometry::PointCloud> source, std::shared_ptr<open3d::geometry::PointCloud> target){
+void etrs::o3d::add(std::shared_ptr<open3d::geometry::PointCloud> source, std::shared_ptr<open3d::geometry::PointCloud> target){
     *source += *target;
 }
 
-void cas::o3d::save(std::shared_ptr<open3d::geometry::PointCloud> source, std::string path){
+void etrs::o3d::save(std::shared_ptr<open3d::geometry::PointCloud> source, std::string path){
     open3d::io::WritePointCloud(path, *source);
 }
 
-void cas::o3d::show(std::shared_ptr<open3d::geometry::PointCloud> source){
+void etrs::o3d::show(std::shared_ptr<open3d::geometry::PointCloud> source){
     std::vector<std::shared_ptr<const open3d::geometry::Geometry>> geometries;
     geometries.push_back(source);
 
@@ -49,7 +49,7 @@ void cas::o3d::show(std::shared_ptr<open3d::geometry::PointCloud> source){
     open3d::visualization::DrawGeometries(geometries);
 }
 
-void cas::o3d::k4a_image_to_o3d_point_cloud(const k4a_image_t point_cloud_image,std::shared_ptr<open3d::geometry::PointCloud> point_cloud) {
+void etrs::o3d::k4a_image_to_o3d_point_cloud(const k4a_image_t point_cloud_image,std::shared_ptr<open3d::geometry::PointCloud> point_cloud) {
     int width = k4a_image_get_width_pixels(point_cloud_image);
     int height = k4a_image_get_height_pixels(point_cloud_image);
 
@@ -115,10 +115,10 @@ void cas::o3d::k4a_image_to_o3d_point_cloud(const k4a_image_t point_cloud_image,
 //    // 使用 `DrawGeometries()` 函数来显示点云
 //    open3d::visualization::DrawGeometries(geometries);
 
-//    cas::o3d::registration(source, target); //ICP配准
-//    cas::o3d::add(source, target);  //点云相加
-//    cas::o3d::save(source, "reg/reged.pcd");    //保存结果
-//    cas::o3d::show(source); //显示结果
+//    etrs::o3d::registration(source, target); //ICP配准
+//    etrs::o3d::add(source, target);  //点云相加
+//    etrs::o3d::save(source, "reg/reged.pcd");    //保存结果
+//    etrs::o3d::show(source); //显示结果
 //
 //    return 0;
 //}

@@ -1,5 +1,5 @@
 syntax = "proto3";
-package cas.proto;
+package etrs.proto;
 
 // 夹爪
 message BotGripper{

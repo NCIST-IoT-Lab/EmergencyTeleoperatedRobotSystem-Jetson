@@ -12,11 +12,11 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <netinet/tcp.h> //TCP_NODELAY
-#include <CasUtility.h>
+#include <Utility.h>
 
-using namespace cas::utility;
+using namespace etrs::utility;
 
-namespace cas {
+namespace etrs {
     namespace net {
         // bool getLocalIp(char *ip);
 
@@ -37,11 +37,11 @@ namespace cas {
             Client(const int port, std::function<void()> onConnect = nullptr);
             bool sendMessage(google::protobuf::Message &message);
             int recvData(unsigned char *recv_buffer, const int recv_length);
-            bool recvMessage(cas::proto::DataMessage &message);
+            bool recvMessage(etrs::proto::DataMessage &message);
             bool sendExitMeshMessage();
         };
 
     }; // namespace net
-} // namespace cas
+} // namespace etrs
 
 #endif // CASNETWORK_H

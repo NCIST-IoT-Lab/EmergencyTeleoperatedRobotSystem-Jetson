@@ -2,8 +2,8 @@
 // Created by HoChihChou on 4/9/23.
 //
 
-#include "CasAzureKinectExtrinsics.h"
-#include "CasPointCloud.h"
+#include "AzureKinectExtrinsics.h"
+#include "PointCloud.h"
 
 #include <math.h>
 #include <string>
@@ -159,17 +159,17 @@ int main(int argc, char **argv) {
     k4a_imu_sample_t imu_sample;
     float prev_radian = 0;
 
-    cas::EulerAngle prevAngle(0, 0, 0);
+    etrs::EulerAngle prevAngle(0, 0, 0);
 
     float temp = 0;
 
     int point_count = 0;
 
-    if (!cas::openAzureKinectDevice(&device)) {
+    if (!etrs::openAzureKinectDevice(&device)) {
         goto Exit;
     }
 
-    if (!cas::getAzureKinectCalibration(device, config, &calibration)) {
+    if (!etrs::getAzureKinectCalibration(device, config, &calibration)) {
         goto Exit;
     }
 
@@ -189,16 +189,16 @@ int main(int argc, char **argv) {
                      calibration.depth_camera_calibration.resolution_width * (int) sizeof(k4a_float3_t),
                      &point_cloud);
 
-    if (!cas::configureAzureKinectDevice(device, config)) {
+    if (!etrs::configureAzureKinectDevice(device, config)) {
         goto Exit;
     }
 
-    if (!cas::startAzureKinectImu(device)) {
+    if (!etrs::startAzureKinectImu(device)) {
         goto Exit;
     }
 
-    while (cas::getAzureKinectImuSample(device, &imu_sample, TIMEOUT_IN_MS)) {
-//        if (!cas::getAzureKinectImuSample(device, &imu_sample, TIMEOUT_IN_MS)) {
+    while (etrs::getAzureKinectImuSample(device, &imu_sample, TIMEOUT_IN_MS)) {
+//        if (!etrs::getAzureKinectImuSample(device, &imu_sample, TIMEOUT_IN_MS)) {
 //            goto Exit;
 //        }
 
@@ -228,25 +228,25 @@ int main(int argc, char **argv) {
         if (abs(prevAngle.yaw - prev_radian) > 0.3491) {
             prev_radian = prevAngle.yaw;
             printf("saving...\n");
-            if (!cas::getAzureKinectCapture(device, &capture, TIMEOUT_IN_MS)) {
+            if (!etrs::getAzureKinectCapture(device, &capture, TIMEOUT_IN_MS)) {
                 goto Exit;
             }
 
-            if (!cas::getAzureKinectDepthImage(capture, &depth_image)) {
+            if (!etrs::getAzureKinectDepthImage(capture, &depth_image)) {
                 goto Exit;
             }
 
-            if (!cas::getAzureKinectColorImage(capture, &color_image)) {
+            if (!etrs::getAzureKinectColorImage(capture, &color_image)) {
                 goto Exit;
             }
 
             auto source = std::make_shared<open3d::geometry::PointCloud>();
             generate_point_cloud(depth_image, color_image, xy_table, point_cloud, &point_count);
-            cas::o3d::k4a_image_to_o3d_point_cloud(point_cloud, source);
+            etrs::o3d::k4a_image_to_o3d_point_cloud(point_cloud, source);
 //            auto source = generate_o3d_point_cloud(depth_image, color_image, xy_table);
 
             Eigen::Vector3d center = Eigen::Vector3d::Zero();
-//            source->Rotate(cas::eulerAngle2RotationMatrix(prevAngle), center);
+//            source->Rotate(etrs::eulerAngle2RotationMatrix(prevAngle), center);
             std::string file_name = "reg/" + to_string(file_count) + ".ply";
             open3d::io::WritePointCloud(file_name, *source);
 //            write_point_cloud(file_name.c_str(), point_cloud, point_count);
@@ -256,7 +256,7 @@ int main(int argc, char **argv) {
             cout << "旋转角:" + to_string(prevAngle.roll) + " " + to_string(prevAngle.pitch) + " " +
                     to_string(prevAngle.yaw) << endl;
             //打印旋转矩阵
-            cout << cas::eulerAngle2RotationMatrix(prevAngle) << endl;
+            cout << etrs::eulerAngle2RotationMatrix(prevAngle) << endl;
 
             file_count++;
         }

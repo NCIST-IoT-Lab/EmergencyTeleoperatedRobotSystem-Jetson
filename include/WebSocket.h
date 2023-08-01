@@ -11,12 +11,12 @@
 //函数：sendPointCloudToServer，参数：点云数据
 
 #include "string"
-#include <CasUtility.h>
+#include <Utility.h>
 
 using namespace std;
-using namespace cas::utility;
+using namespace etrs::utility;
 
-namespace cas {
+namespace etrs {
     class CasWebSocket {
     public:
         CasWebSocket(const string &url, const string &port, const string &target);
