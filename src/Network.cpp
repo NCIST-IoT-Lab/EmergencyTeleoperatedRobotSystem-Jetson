@@ -120,6 +120,7 @@ bool etrs::net::Client::sendMessage(google::protobuf::Message &message) {
 
     // 获取序列化后的数据并发送到网络对端
     string serialized_data = output_stream.str();
+    unique_lock<mutex> lock(mutex_);
     if (write(this->fd, serialized_data.data(), serialized_data.size()) < 0) {
         Debug::CoutError("发送消息失败");
         return false;
@@ -148,4 +149,101 @@ bool etrs::net::Client::recvMessage(etrs::proto::DataMessage &message) {
         return false;
     }
     return true;
+}
+
+int etrs::net::Client::sendMessageFromMesh(std::shared_ptr<open3d::geometry::TriangleMesh> mesh_ptr, const int interval) {
+    if (mesh_ptr == nullptr) {
+        Debug::CoutError("Mesh 为空");
+        return -1;
+    }
+    etrs::proto::DataMessage data_message;
+    data_message.set_type(etrs::proto::DataMessage::MESH);            // 设置消息类型
+    etrs::proto::Mesh *mesh_message = data_message.mutable_mesh();
+    const vector<Eigen::Vector3d> &vertices = mesh_ptr->vertices_;    // 顶点坐标
+    const vector<Eigen::Vector3i> &triangles = mesh_ptr->triangles_;  // 顶点索引
+    const vector<Eigen::Vector3d> &colors = mesh_ptr->vertex_colors_; // 顶点颜色
+    int write_count = 0;
+    for (int i = 0; i < triangles.size(); i++) {
+        etrs::proto::V1 *v1 = mesh_message->add_v1();
+        int v1_index = triangles[i][0];
+        v1->set_x(vertices[v1_index][0]);
+        v1->set_y(vertices[v1_index][1]);
+        v1->set_z(vertices[v1_index][2]);
+
+        etrs::proto::V2 *v2 = mesh_message->add_v2();
+        int v2_index = triangles[i][1];
+        v2->set_x(vertices[v2_index][0]);
+        v2->set_y(vertices[v2_index][1]);
+        v2->set_z(vertices[v2_index][2]);
+
+        etrs::proto::V3 *v3 = mesh_message->add_v3();
+        int v3_index = triangles[i][2];
+        v3->set_x(vertices[v3_index][0]);
+        v3->set_y(vertices[v3_index][1]);
+        v3->set_z(vertices[v3_index][2]);
+
+        mesh_message->add_r((colors[v1_index][0] + colors[v2_index][0] + colors[v3_index][0]) / 3.0);
+        mesh_message->add_g((colors[v1_index][1] + colors[v2_index][1] + colors[v3_index][1]) / 3.0);
+        mesh_message->add_b((colors[v1_index][2] + colors[v2_index][2] + colors[v3_index][2]) / 3.0);
+
+        if ((i + 1) % interval == 0 || i == (triangles.size() - 1)) {
+            // unique_lock<mutex> lock(client_mutex);
+            sendMessage(data_message);
+            mesh_message->Clear();
+            write_count++;
+        }
+        Debug::CoutFlush("已发送：{}", write_count);
+    }
+    Debug::CoutSection("发送完毕", "一共发送了 {} 次\n 面片数量 {} ", write_count, triangles.size());
+    sendExitMeshMessage();
+    return write_count;
+}
+
+int etrs::net::Client::sendMessageFromMesh(open3d::geometry::TriangleMesh mesh, const int interval) {
+    if (mesh.IsEmpty()) {
+        Debug::CoutError("Mesh 为空");
+        return -1;
+    }
+    etrs::proto::DataMessage data_message;
+    data_message.set_type(etrs::proto::DataMessage::MESH);
+    etrs::proto::Mesh *mesh_message = data_message.mutable_mesh();
+    const vector<Eigen::Vector3d> &vertices = mesh.vertices_;
+    const vector<Eigen::Vector3i> &triangles = mesh.triangles_;
+    const vector<Eigen::Vector3d> &colors = mesh.vertex_colors_;
+
+    int write_count = 0;
+    for (int i = 0; i < triangles.size(); i++) {
+        etrs::proto::V1 *v1 = mesh_message->add_v1();
+        int v1_index = triangles[i][0];
+        v1->set_x(vertices[v1_index][0]);
+        v1->set_y(vertices[v1_index][1]);
+        v1->set_z(vertices[v1_index][2]);
+
+        etrs::proto::V2 *v2 = mesh_message->add_v2();
+        int v2_index = triangles[i][1];
+        v2->set_x(vertices[v2_index][0]);
+        v2->set_y(vertices[v2_index][1]);
+        v2->set_z(vertices[v2_index][2]);
+
+        etrs::proto::V3 *v3 = mesh_message->add_v3();
+        int v3_index = triangles[i][2];
+        v3->set_x(vertices[v3_index][0]);
+        v3->set_y(vertices[v3_index][1]);
+        v3->set_z(vertices[v3_index][2]);
+
+        mesh_message->add_r((colors[v1_index][0] + colors[v2_index][0] + colors[v3_index][0]) / 3.0);
+        mesh_message->add_g((colors[v1_index][1] + colors[v2_index][1] + colors[v3_index][1]) / 3.0);
+        mesh_message->add_b((colors[v1_index][2] + colors[v2_index][2] + colors[v3_index][2]) / 3.0);
+
+        if ((i + 1) % interval == 0 || i == (triangles.size() - 1)) {
+            // unique_lock<mutex> lock(client_mutex);
+            sendMessage(data_message);
+            mesh_message->Clear();
+            write_count++;
+        }
+        Debug::CoutFlush("已发送：{}", write_count);
+    }
+    Debug::CoutSection("发送完毕", "一共发送了 {} 次\n 面片数量 {} ", write_count, triangles.size());
+    sendExitMeshMessage();
+    return write_count;
 }

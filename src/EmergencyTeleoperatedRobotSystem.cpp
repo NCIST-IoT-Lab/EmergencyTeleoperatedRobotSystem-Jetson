@@ -99,7 +99,7 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
         return 0;
     }
 
-    bot_motor.rotate(FIRST_MOTOR_ROTATION, [&]() { onRotated(program_config, FIRST_MOTOR_ROTATION); });
+    // bot_motor.rotate(FIRST_MOTOR_ROTATION, [&]() { onRotated(program_config, FIRST_MOTOR_ROTATION); });
 
     // 打开（默认）设备
     device = k4a::device::open(K4A_DEVICE_DEFAULT);
@@ -110,7 +110,7 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
     // 配置并启动设备
     config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
     config.camera_fps = K4A_FRAMES_PER_SECOND_30;
-    config.color_format = K4A_IMAGE_FORMAT_COLOR_MJPG; // TODO: 试试 BGRA32
+    config.color_format = K4A_IMAGE_FORMAT_COLOR_BGRA32; // TODO: 试试 BGRA32
     config.color_resolution = K4A_COLOR_RESOLUTION_1536P;
     config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
     config.synchronized_images_only = true; // 只输出同步的图像，即同步深度图和彩色图
@@ -166,24 +166,24 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
     etrs::proto::KinectMode::Mode kinect_mode = etrs::proto::KinectMode::REAL_TIME;
 
     // 声源定位线程
-    thread ssl_thread([&]() {
-        if (ENABLE_SOUND_SOURCE_LOCALIZATION) {
-            etrs::ssl::SoundSourceDetector sound_source_detector(SAMPLE_RATE, SAMPLES, CHANNELS, MICROPHONE_NAME);
-            sound_source_detector.start();
-            while (true) {
-                // lock_guard<mutex> lock(ssl_mutex);
-                Eigen::Vector3f sound_source = sound_source_detector.locate();
-                etrs::proto::DataMessage data_message;
-                data_message.set_type(etrs::proto::DataMessage::SOUND_SOURCE);
-                etrs::proto::SoundSource *sound_source_message = data_message.mutable_sound_source();
-                sound_source_message->set_x(sound_source[0]);
-                sound_source_message->set_y(sound_source[1]);
-                sound_source_message->set_z(sound_source[2]);
-                Debug::CoutInfo("声源位置: {}, {}, {}", sound_source[0], sound_source[1], sound_source[2]);
-                client.sendMessage(data_message);
-            }
-        }
-    });
+    // thread ssl_thread([&]() {
+    //     if (ENABLE_SOUND_SOURCE_LOCALIZATION) {
+    //         etrs::ssl::SoundSourceDetector sound_source_detector(SAMPLE_RATE, SAMPLES, CHANNELS, MICROPHONE_NAME);
+    //         sound_source_detector.start();
+    //         while (true) {
+    //             // lock_guard<mutex> lock(ssl_mutex);
+    //             Eigen::Vector3f sound_source = sound_source_detector.locate();
+    //             etrs::proto::DataMessage data_message;
+    //             data_message.set_type(etrs::proto::DataMessage::SOUND_SOURCE);
+    //             etrs::proto::SoundSource *sound_source_message = data_message.mutable_sound_source();
+    //             sound_source_message->set_x(sound_source[0]);
+    //             sound_source_message->set_y(sound_source[1]);
+    //             sound_source_message->set_z(sound_source[2]);
+    //             Debug::CoutInfo("声源位置: {}, {}, {}", sound_source[0], sound_source[1], sound_source[2]);
+    //             client.sendMessage(data_message);
+    //         }
+    //     }
+    // });
 
     // 机械臂线程
     // thread bot_arm_thread([&]() {
@@ -240,16 +240,6 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                 case (int)etrs::proto::DataMessage::BOT_ARM: {
                     Debug::CoutSuccess("收到机械臂数据");
                     int length = data_message.bot_arm().data_buffer().length();
-                    // int angles[6];
-                    // char recv_buffer1[length];
-                    // memcpy(recv_buffer1, data_message.bot_arm().data_buffer().data(), length);
-                    // for (int i = 0; i < 6; i++) {
-                    //     if (recv_buffer1[5 + 2 * i] + recv_buffer1[4 + 2 * i] * 256 > 33000) {
-                    //         angles[i] = (recv_buffer1[5 + 2 * i] + recv_buffer1[4 + 2 * i] * 256 - 65536) / 100;
-                    //     } else {
-                    //         angles[i] = (recv_buffer1[5 + 2 * i] + recv_buffer1[4 + 2 * i] * 256) / 100;
-                    //     }
-                    // }
                     bot_arm.execute(data_message.bot_arm().data_buffer().data(), length);
                     bot_arm.sendCommand(etrs::bot::BotArm::CommandSet::READ_ANGLE);
                     break;
@@ -299,7 +289,7 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                     etrs::proto::TempAndHumi *temp_and_humi = data_message.mutable_temp_and_humi();
                     temp_and_humi->set_humi(humi);
                     temp_and_humi->set_temp(temp);
-                    unique_lock<mutex> lock(client_mutex);
+                    // unique_lock<mutex> lock(client_mutex);
                     client.sendMessage(data_message);
                     break;
                 }
@@ -309,8 +299,6 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
 
     // 开启深度和彩色图像的对齐
     bool enable_align_depth_to_color = true;
-
-    // MKV文件读取器
 
     // 体素网格参数
     float voxel_size = BLOCK_VOXEL_SIZE;
@@ -370,18 +358,19 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                 // recorder.OpenRecord(mkv_file_path);
                 // cout << "4" << endl;
 
-                if (bot_motor.rotate(FIRST_MOTOR_ROTATION)) {
-                    cout << "舵机旋转成功" << endl;
-                    if (FIRST_MOTOR_ROTATION == "F") {
-                        FIRST_MOTOR_ROTATION = "R";
-                        program_config.set("first_motor_rotation", "R");
-                    } else if (FIRST_MOTOR_ROTATION == "R") {
-                        FIRST_MOTOR_ROTATION = "F";
-                        program_config.set("first_motor_rotation", "F");
-                    } else {
-                        cerr << "未知的舵机旋转方向！" << endl;
-                    }
-                }
+                bot_motor.rotate(FIRST_MOTOR_ROTATION, [&]() { onRotated(program_config, FIRST_MOTOR_ROTATION); });
+                // if (bot_motor.rotate(FIRST_MOTOR_ROTATION)) {
+                //     cout << "舵机旋转成功" << endl;
+                //     if (FIRST_MOTOR_ROTATION == "F") {
+                //         FIRST_MOTOR_ROTATION = "R";
+                //         program_config.set("first_motor_rotation", "R");
+                //     } else if (FIRST_MOTOR_ROTATION == "R") {
+                //         FIRST_MOTOR_ROTATION = "F";
+                //         program_config.set("first_motor_rotation", "F");
+                //     } else {
+                //         cerr << "未知的舵机旋转方向！" << endl;
+                //     }
+                // }
 
                 while (true) {
                     // true 表示开始录制
@@ -432,7 +421,7 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
 
                     // 读取第一个有效帧
                     do {
-                        // im_rgbd = sensor.CaptureFrame(true);
+                        im_rgbd = sensor.CaptureFrame(true);
                     } while (im_rgbd == nullptr);
 
                     // 初始化 SLAM 模型
@@ -457,7 +446,7 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                         // 读取一帧
                         // auto im_rgbd = mkv_reader.NextFrame();
 
-                        // im_rgbd = sensor.CaptureFrame(true);
+                        im_rgbd = sensor.CaptureFrame(true);
 
                         if (im_rgbd == nullptr) { // 读取失败则跳过
                             continue;
@@ -481,12 +470,11 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                                     T_frame_to_model = T_frame_to_model.Matmul(result.transformation_);
                                 } else {
                                     tracking_success = false;
-                                    cout << "失败啦！" << endl;
+                                    Debug::CoutError("里程计跟踪失败！");
                                 }
-                                cout << "fitness: " << result.fitness_ << "， translation_norm: " << translation_norm
-                                     << endl;
+                                Debug::CoutInfo("fitness: {}， translation_norm: {}", result.fitness_, translation_norm);
                             } catch (const runtime_error &e) {
-                                cout << e.what() << endl;
+                                Debug::CoutError("{}",e.what());
                                 tracking_success = false;
                                 --i;
                             }
@@ -507,6 +495,9 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                     // mkv_reader.~MKVReader();
                     auto des_mesh = model.ExtractTriangleMesh().ToLegacy();
                     model.~Model();
+
+                    // 发送面片数据
+                    client.sendMessageFromMesh(mesh, 800);
                     io::WriteTriangleMesh("ply/slam_mesh.ply", des_mesh);
                     break;
                 }
@@ -585,54 +576,8 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                 vector<double> radii = {radius, radius * 2};
                 auto mesh = geometry::TriangleMesh::CreateFromPointCloudBallPivoting(point_cloud, radii);
 
-                if (IS_CREATE_SERVER) {
-                    Debug::CoutDebug("开始发送数据");
-                    etrs::proto::DataMessage data_message;
-                    // 设置消息类型
-                    data_message.set_type(etrs::proto::DataMessage::MESH);
-                    etrs::proto::Mesh *mesh_message = data_message.mutable_mesh();
-                    // 顶点坐标
-                    const vector<Eigen::Vector3d> &vertices = mesh->vertices_;
-                    // 顶点索引
-                    const vector<Eigen::Vector3i> &triangles = mesh->triangles_;
-                    // 顶点颜色
-                    const vector<Eigen::Vector3d> &colors = mesh->vertex_colors_;
-
-                    int write_count = 0;
-                    for (int i = 0; i < triangles.size(); i++) {
-                        etrs::proto::V1 *v1 = mesh_message->add_v1();
-                        int v1_index = triangles[i][0];
-                        v1->set_x(vertices[v1_index][0]);
-                        v1->set_y(vertices[v1_index][1]);
-                        v1->set_z(vertices[v1_index][2]);
-
-                        etrs::proto::V2 *v2 = mesh_message->add_v2();
-                        int v2_index = triangles[i][1];
-                        v2->set_x(vertices[v2_index][0]);
-                        v2->set_y(vertices[v2_index][1]);
-                        v2->set_z(vertices[v2_index][2]);
-
-                        etrs::proto::V3 *v3 = mesh_message->add_v3();
-                        int v3_index = triangles[i][2];
-                        v3->set_x(vertices[v3_index][0]);
-                        v3->set_y(vertices[v3_index][1]);
-                        v3->set_z(vertices[v3_index][2]);
-
-                        mesh_message->add_r((colors[v1_index][0] + colors[v2_index][0] + colors[v3_index][0]) / 3.0);
-                        mesh_message->add_g((colors[v1_index][1] + colors[v2_index][1] + colors[v3_index][1]) / 3.0);
-                        mesh_message->add_b((colors[v1_index][2] + colors[v2_index][2] + colors[v3_index][2]) / 3.0);
-
-                        if ((i + 1) % 500 == 0 || i == (triangles.size() - 1)) {
-                            unique_lock<mutex> lock(client_mutex);
-                            client.sendMessage(data_message);
-                            mesh_message->Clear();
-                            write_count++;
-                        }
-                        Debug::CoutFlush("已发送：{}", write_count);
-                    }
-                    Debug::CoutSection("发送完毕", "一共发送了 {} 次\n 面片数量 {} ", write_count, triangles.size());
-                }
-                client.sendExitMeshMessage();
+                Debug::CoutDebug("开始发送数据");
+                client.sendMessageFromMesh(mesh, 800);
                 break;
             }
             default: {

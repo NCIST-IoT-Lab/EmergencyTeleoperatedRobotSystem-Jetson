@@ -2,17 +2,18 @@
 #define CASNETWORK_H
 
 #include "DataMessage.pb.h"
+#include <Utility.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <iostream>
 #include <net/if.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h> //TCP_NODELAY
 #include <sstream>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#include <netinet/tcp.h> //TCP_NODELAY
-#include <Utility.h>
+#include <open3d/Open3D.h>
 
 using namespace etrs::utility;
 
@@ -30,6 +31,7 @@ namespace etrs {
         class Client {
         private:
             int fd;
+            mutex mutex_;
 
         public:
             Client(const int port);
@@ -39,6 +41,8 @@ namespace etrs {
             int recvData(unsigned char *recv_buffer, const int recv_length);
             bool recvMessage(etrs::proto::DataMessage &message);
             bool sendExitMeshMessage();
+            int sendMessageFromMesh(std::shared_ptr<open3d::geometry::TriangleMesh> mesh_ptr, const int interval);
+            int sendMessageFromMesh(open3d::geometry::TriangleMesh mesh, const int interval);
         };
 
     }; // namespace net
