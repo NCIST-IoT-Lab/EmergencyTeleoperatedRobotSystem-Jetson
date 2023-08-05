@@ -267,22 +267,22 @@ int etrs::bot::STM32::recvData(unsigned char *recv_buffer, const int recv_length
 }
 
 etrs::bot::BotMotor::BotMotor(string serial_port_name = DEFAULT_SERIAL_PORT_NAME) : STM32(serial_port_name) {
-    this->buffer[0] = 0xFF; //包头
+    this->buffer[0] = 0xFF; // 包头
     this->buffer[1] = etrs::bot::BotMotor::CommandSet::MOTOR;
-    this->buffer[2] = 0x00; //方向
-    this->buffer[3] = 0x00; //角度高位
-    this->buffer[4] = 0x00; //角度低位
-    this->buffer[5] = 0x00; //速度高位
-    this->buffer[6] = 0x00; //速度低位
-    this->buffer[7] = 0xFE; //包尾
+    this->buffer[2] = 0x00; // 方向
+    this->buffer[3] = 0x00; // 角度高位
+    this->buffer[4] = 0x00; // 角度低位
+    this->buffer[5] = 0x00; // 速度高位
+    this->buffer[6] = 0x00; // 速度低位
+    this->buffer[7] = 0xFE; // 包尾
 }
 
 bool etrs::bot::BotMotor::rotate(string direction, std::function<void()> onRotated) {
     if (onRotated != nullptr) {
         onRotated();
     }
-    if (direction == "F") { 
-        this->buffer[2] = 0x01; //顺时针
+    if (direction == "F") {
+        this->buffer[2] = 0x01; // 顺时针
         this->buffer[3] = 0x01;
         this->buffer[4] = 0x68;
         this->buffer[5] = 0x27;
@@ -298,6 +298,7 @@ bool etrs::bot::BotMotor::rotate(string direction, std::function<void()> onRotat
         Debug::CoutDebug("向后转动电机！");
         return STM32::sendData(this->buffer, 8);
     }
+    Debug::CoutDebug("失败！{}", direction);
     return false;
 }
 
@@ -607,10 +608,10 @@ bool etrs::bot::BotCar::executeMoveSequence(float *seq, int seq_length) {
 etrs::bot::BotLed::BotLed(string serial_port_name) {
     this->buffer[0] = 0xFF;
     this->buffer[1] = etrs::bot::BotLed::CommandSet::LED;
-    this->buffer[2] = 0x00; //颜色
-    this->buffer[3] = 0x00; //r
-    this->buffer[4] = 0x00; //g
-    this->buffer[5] = 0x00; //b
+    this->buffer[2] = 0x00; // 颜色
+    this->buffer[3] = 0x00; // r
+    this->buffer[4] = 0x00; // g
+    this->buffer[5] = 0x00; // b
     this->buffer[6] = 0x00;
     this->buffer[7] = 0xFE;
 }

@@ -15,6 +15,7 @@ namespace etrs {
             ~Recoder();
 
             Recoder(const string file_path);
+            
         };
 
     }; // namespace replay

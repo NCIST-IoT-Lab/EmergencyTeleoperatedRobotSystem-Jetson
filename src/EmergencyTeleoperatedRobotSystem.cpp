@@ -10,10 +10,10 @@
 #include "AzureKinect.h"
 #include "AzureKinectExtrinsics.h"
 #include "Bot.h"
+#include "DataMessage.pb.h"
 #include "Network.h"
 #include "SoundSourceLocalization.h"
 #include "Utility.h"
-#include "DataMessage.pb.h"
 
 #include <iostream>
 #include <k4a/k4a.hpp>
@@ -145,25 +145,17 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
     });
 
     // 定义互斥锁
-    mutex arm_mutex;
     mutex client_mutex;
     mutex stm32_mutex;
-    mutex car_mutex;
     mutex recon_mutex;
 
-    // 定义条件变量
-    condition_variable arm_cv;
-    condition_variable stm32_cv;
-    condition_variable client_cv;
-    condition_variable timer_cv;
-    // 定义共享变量
-    bool ready_to_break = false;
-    bool need_break = false;
-
+    // FIXME:
     bool need_reconnstrcution = true;
     bool flag_recording = true;
+    bool kinect_going = true;
 
-    etrs::proto::KinectMode::Mode kinect_mode = etrs::proto::KinectMode::REAL_TIME;
+    // etrs::proto::KinectMode::Mode kinect_mode = etrs::proto::KinectMode::REAL_TIME;
+    etrs::proto::KinectMode::Mode kinect_mode = etrs::proto::KinectMode::RECONSTRCUTION;
 
     // 声源定位线程
     // thread ssl_thread([&]() {
@@ -254,6 +246,12 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                     }
                     break;
                 }
+                case (int)etrs::proto::DataMessage::KINECT_MODE: {
+                    Debug::CoutSuccess("收到Kinect模式切换请求");
+                    kinect_going = false;
+                    kinect_mode = data_message.kinect_mode().mode();
+                    break;
+                }
                 case (int)etrs::proto::DataMessage::OTHER:
                 default:
                     Debug::CoutError("未知的客户端数据类型");
@@ -284,6 +282,7 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                 case 'T': {
                     float humi = stm32_buffer[1] + stm32_buffer[2] / 10.0;
                     float temp = stm32_buffer[3] + stm32_buffer[4] / 10.0;
+                    // Debug::CoutDebug("温湿度传感器数据: {} {}", humi, temp);
                     etrs::proto::DataMessage data_message;
                     data_message.set_type(etrs::proto::DataMessage::TEMP_AND_HUMI);
                     etrs::proto::TempAndHumi *temp_and_humi = data_message.mutable_temp_and_humi();
@@ -318,89 +317,30 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
     // 设备类型
     core::Device cuda_ = core::Device("cuda:0");
 
-    // io::AzureKinectSensorConfig sensor_config;
-    // string azure_kinect_config_file = "../azure_kinect_sensor_conf.json";
-    // io::ReadIJsonConvertibleFromJSON(azure_kinect_config_file, sensor_config);
-    // io::AzureKinectSensor sensor(sensor_config);
-    // io::AzureKinectRecorder recorder(sensor_config, 0);
-    // if (!recorder.InitSensor()) {
-    //     Debug::CoutError("初始化相机失败!");
-    //     return -1;
-    // }
-
-    // sensor.Connect(0);
-    // Debug::CoutSuccess("相机初始化成功");
+    io::AzureKinectSensorConfig sensor_config;
+    string azure_kinect_config_file = "../azure_kinect_sensor_conf.json";
+    io::ReadIJsonConvertibleFromJSON(azure_kinect_config_file, sensor_config);
+    io::AzureKinectSensor sensor(sensor_config);
 
     while (true) {
+        kinect_going = true;
         switch (kinect_mode) {
             case etrs::proto::KinectMode::RECONSTRCUTION: {
                 Debug::CoutInfo("切换至重建模式");
+                while (kinect_going) {
 
-                if (!need_reconnstrcution) {
-                    continue;
-                }
+                    if (!need_reconnstrcution) {
+                        continue;
+                    }
+                    need_reconnstrcution = false;
 
-                this_thread::sleep_for(std::chrono::milliseconds(1000));
+                    device.close();
 
-                // io::MKVReader mkv_reader;
-                // cout << "1" << endl;
-                // // 初始化 Kinect 相机
-                // // 此次录制文件夹
-                // string recording_folder_path = RECORDINGS_FOLDER_PATH + "recording_" + utility::GetCurrentTimeStamp()
-                // +
-                // "/"; utility::filesystem::MakeDirectoryHierarchy(recording_folder_path); // 创建此次录制文件夹 string
-                // recording_file_name = "recon_" + utility::GetCurrentTimeStamp() + ".mkv"; cout << "2" << endl;
-                // // MKV 文件路径
-                // string mkv_file_path = recording_folder_path + recording_file_name;
-                // cout << "3" << endl;
+                    sensor.Connect(0);
+                    Debug::CoutSuccess("相机初始化成功");
+                    // this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-                // // 开始录制
-                // recorder.OpenRecord(mkv_file_path);
-                // cout << "4" << endl;
-
-                bot_motor.rotate(FIRST_MOTOR_ROTATION, [&]() { onRotated(program_config, FIRST_MOTOR_ROTATION); });
-                // if (bot_motor.rotate(FIRST_MOTOR_ROTATION)) {
-                //     cout << "舵机旋转成功" << endl;
-                //     if (FIRST_MOTOR_ROTATION == "F") {
-                //         FIRST_MOTOR_ROTATION = "R";
-                //         program_config.set("first_motor_rotation", "R");
-                //     } else if (FIRST_MOTOR_ROTATION == "R") {
-                //         FIRST_MOTOR_ROTATION = "F";
-                //         program_config.set("first_motor_rotation", "F");
-                //     } else {
-                //         cerr << "未知的舵机旋转方向！" << endl;
-                //     }
-                // }
-
-                while (true) {
-                    // true 表示开始录制
-                    // auto im_rgbd = recorder.RecordFrame(true, enable_align_depth_to_color);
-                    // if (im_rgbd == nullptr) {
-                    //     cerr << "获取图像失败! 跳过此帧" << endl;
-                    //     continue;
-                    // }
-
-                    // if (flag_recording) {
-                    // TODO: 可以封装
-                    // if (recorder.IsRecordCreated()) {
-                    //     cout << "录制完毕" << endl;
-                    // } else {
-                    //     cerr << "录制失败！" << endl;
-                    //     return -1;
-                    // }
-                    // // 完成一次重建录制，关闭相机
-                    // recorder.CloseRecord();
-                    // recorder.~AzureKinectRecorder();
-
-                    // 读取 mkv 文件中的数据
-
-                    // FIXME: 不需要保存成文件
-                    // utility::filesystem::MakeDirectory(mkv_parse_folder_path + "/color");
-                    // utility::filesystem::MakeDirectory(mkv_parse_folder_path + "/depth");
-
-                    // 读取录制的 mkv 文件
-                    // mkv_reader.Open(mkv_file_path);
-
+                    bot_motor.rotate(FIRST_MOTOR_ROTATION, [&]() { onRotated(program_config, FIRST_MOTOR_ROTATION); });
                     // intrinsic = mkv_reader.GetMetadata().intrinsics_;
                     // auto focal_length = intrinsic.GetFocalLength();
                     // auto principal_point = intrinsic.GetPrincipalPoint();
@@ -411,11 +351,6 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
 
                     core::Tensor intrinsic_t =
                         core::Tensor::Init<double>({{963.205, 0, 1012.87}, {0, 962.543, 777.369}, {0, 0, 1}});
-
-                    // if (!mkv_reader.IsOpened()) { // 打开失败
-                    //     cerr << "打开 MKV 文件失败！" << endl;
-                    //     return -1;
-                    // }
 
                     std::shared_ptr<geometry::RGBDImage> im_rgbd;
 
@@ -434,23 +369,16 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                     t::pipelines::slam::Frame input_frame(ref_depth.GetRows(), ref_depth.GetCols(), intrinsic_t, cuda_);
                     t::pipelines::slam::Frame raycast_frame(ref_depth.GetRows(), ref_depth.GetCols(), intrinsic_t,
                                                             cuda_);
-                    cout << "%6" << endl;
-
                     int i = 0;
                     // 循环读取mkv文件
                     while (flag_recording) {
-                        // TODO: 保存成 MKV 解析文件
-
-                        cout << "处理中：" << i << endl;
-
-                        // 读取一帧
-                        // auto im_rgbd = mkv_reader.NextFrame();
-
                         im_rgbd = sensor.CaptureFrame(true);
 
                         if (im_rgbd == nullptr) { // 读取失败则跳过
                             continue;
                         }
+
+                        cout << "处理中：" << i << endl;
 
                         input_frame.SetDataFromImage("depth", t::geometry::Image::FromLegacy(im_rgbd->depth_, cuda_));
                         input_frame.SetDataFromImage("color", t::geometry::Image::FromLegacy(im_rgbd->color_, cuda_));
@@ -472,9 +400,10 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                                     tracking_success = false;
                                     Debug::CoutError("里程计跟踪失败！");
                                 }
-                                Debug::CoutInfo("fitness: {}， translation_norm: {}", result.fitness_, translation_norm);
+                                Debug::CoutInfo("fitness: {}， translation_norm: {}", result.fitness_,
+                                                translation_norm);
                             } catch (const runtime_error &e) {
-                                Debug::CoutError("{}",e.what());
+                                Debug::CoutError("{}", e.what());
                                 tracking_success = false;
                                 --i;
                             }
@@ -489,95 +418,96 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                         i++;
                     }
 
-                    // sensor.Disconnect();
-
-                    // mkv_reader.Close();
-                    // mkv_reader.~MKVReader();
-                    auto des_mesh = model.ExtractTriangleMesh().ToLegacy();
+                    auto mesh = model.ExtractTriangleMesh().ToLegacy();
                     model.~Model();
 
                     // 发送面片数据
+                    Debug::CoutDebug("开始发送数据");
                     client.sendMessageFromMesh(mesh, 800);
-                    io::WriteTriangleMesh("ply/slam_mesh.ply", des_mesh);
-                    break;
+                    // Debug::CoutDebug("保存面片数据中");
+                    // io::WriteTriangleMesh("ply/slam_mesh.ply", mesh);
                 }
+                break;
             }
             case etrs::proto::KinectMode::REAL_TIME: {
                 Debug::CoutInfo("切换至实时模式");
+                while (kinect_going) {
+                    // FIXME:
+                    // sensor.Disconnect();
 
-                open3d::geometry::PointCloud cloud;
+                    open3d::geometry::PointCloud cloud;
 
-                k4a::capture capture;
-                device.get_capture(&capture);
+                    k4a::capture capture;
+                    device.get_capture(&capture);
 
-                k4a::image rgb_image_item = capture.get_color_image();
-                k4a::image depth_image_item = capture.get_depth_image();
+                    k4a::image rgb_image_item = capture.get_color_image();
+                    k4a::image depth_image_item = capture.get_depth_image();
 
-                int color_image_width_pixels = rgb_image_item.get_width_pixels();
-                int color_image_height_pixels = rgb_image_item.get_height_pixels();
+                    int color_image_width_pixels = rgb_image_item.get_width_pixels();
+                    int color_image_height_pixels = rgb_image_item.get_height_pixels();
 
-                k4a::image transformed_depthImage =
-                    k4a::image::create(K4A_IMAGE_FORMAT_DEPTH16, color_image_width_pixels, color_image_height_pixels,
-                                       color_image_width_pixels * (int)sizeof(uint16_t));
-                k4a::image point_cloud_image =
-                    k4a::image::create(K4A_IMAGE_FORMAT_CUSTOM, color_image_width_pixels, color_image_height_pixels,
-                                       color_image_width_pixels * 3 * (int)sizeof(int16_t));
+                    k4a::image transformed_depthImage =
+                        k4a::image::create(K4A_IMAGE_FORMAT_DEPTH16, color_image_width_pixels,
+                                           color_image_height_pixels, color_image_width_pixels * (int)sizeof(uint16_t));
+                    k4a::image point_cloud_image =
+                        k4a::image::create(K4A_IMAGE_FORMAT_CUSTOM, color_image_width_pixels, color_image_height_pixels,
+                                           color_image_width_pixels * 3 * (int)sizeof(int16_t));
 
-                k4a_transformation.depth_image_to_color_camera(depth_image_item, &transformed_depthImage);
+                    k4a_transformation.depth_image_to_color_camera(depth_image_item, &transformed_depthImage);
 
-                k4a_transformation.depth_image_to_point_cloud(transformed_depthImage, K4A_CALIBRATION_TYPE_COLOR,
-                                                              &point_cloud_image);
+                    k4a_transformation.depth_image_to_point_cloud(transformed_depthImage, K4A_CALIBRATION_TYPE_COLOR,
+                                                                  &point_cloud_image);
 
-                cloud.points_.resize(color_image_width_pixels * color_image_height_pixels);
-                cloud.colors_.resize(color_image_width_pixels * color_image_height_pixels);
+                    cloud.points_.resize(color_image_width_pixels * color_image_height_pixels);
+                    cloud.colors_.resize(color_image_width_pixels * color_image_height_pixels);
 
-                const int16_t *point_cloud_image_data =
-                    reinterpret_cast<const int16_t *>(point_cloud_image.get_buffer());
-                const uint8_t *color_image_data = rgb_image_item.get_buffer();
+                    const int16_t *point_cloud_image_data =
+                        reinterpret_cast<const int16_t *>(point_cloud_image.get_buffer());
+                    const uint8_t *color_image_data = rgb_image_item.get_buffer();
 
-                for (int i = 0; i < color_image_width_pixels * color_image_height_pixels; i++) {
-                    if (point_cloud_image_data[3 * i + 0] != 0 && point_cloud_image_data[3 * i + 1] != 0 &&
-                        point_cloud_image_data[3 * i + 2] != 0) {
-                        cloud.points_[i] = Eigen::Vector3d(point_cloud_image_data[3 * i + 0] / 1000.0f,
-                                                           point_cloud_image_data[3 * i + 1] / 1000.0f,
-                                                           point_cloud_image_data[3 * i + 2] / 1000.0f);
-                        cloud.colors_[i] =
-                            Eigen::Vector3d(color_image_data[4 * i + 2] / 255.0f, color_image_data[4 * i + 1] /
-                            255.0f,
-                                            color_image_data[4 * i + 0] / 255.0f);
-                    } else {
-                        cloud.points_[i] = Eigen::Vector3d::Zero();
-                        cloud.colors_[i] = Eigen::Vector3d::Zero();
+                    for (int i = 0; i < color_image_width_pixels * color_image_height_pixels; i++) {
+                        if (point_cloud_image_data[3 * i + 0] != 0 && point_cloud_image_data[3 * i + 1] != 0 &&
+                            point_cloud_image_data[3 * i + 2] != 0) {
+                            cloud.points_[i] = Eigen::Vector3d(point_cloud_image_data[3 * i + 0] / 1000.0f,
+                                                               point_cloud_image_data[3 * i + 1] / 1000.0f,
+                                                               point_cloud_image_data[3 * i + 2] / 1000.0f);
+                            cloud.colors_[i] = Eigen::Vector3d(color_image_data[4 * i + 2] / 255.0f,
+                                                               color_image_data[4 * i + 1] / 255.0f,
+                                                               color_image_data[4 * i + 0] / 255.0f);
+                        } else {
+                            cloud.points_[i] = Eigen::Vector3d::Zero();
+                            cloud.colors_[i] = Eigen::Vector3d::Zero();
+                        }
                     }
+
+                    // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+
+                    // k4a::capture capture;
+
+                    // Debug::CoutDebug("实时 1 帧");
+                    // 将iamge转点云
+                    // auto cloud = *geometry::PointCloud::CreateFromRGBDImage(
+                    //     *image, camera::PinholeCameraIntrinsic(
+                    //                 camera::PinholeCameraIntrinsicParameters::Kinect2DepthCameraDefault));
+
+                    auto point_cloud = *cloud.VoxelDownSample(0.03);
+
+                    geometry::KDTreeSearchParamHybrid kd_tree_param(0.03 * 2, 30);
+
+                    point_cloud.EstimateNormals(kd_tree_param);
+
+                    // point_cloud转mesh
+                    vector<double> distances = point_cloud.ComputeNearestNeighborDistance();
+                    // 计算平均距离
+                    double avg_dist = accumulate(distances.begin(), distances.end(), 0.0) / distances.size();
+                    // 设置搜索半径
+                    double radius = avg_dist * LARGE_RADIUS_MULTIPLIER;
+                    vector<double> radii = {radius, radius * 2};
+                    auto mesh = geometry::TriangleMesh::CreateFromPointCloudBallPivoting(point_cloud, radii);
+
+                    Debug::CoutDebug("开始发送数据");
+                    client.sendMessageFromMesh(mesh, 800);
                 }
-
-                // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
-
-                // k4a::capture capture;
-
-                // Debug::CoutDebug("实时 1 帧");
-                // 将iamge转点云
-                // auto cloud = *geometry::PointCloud::CreateFromRGBDImage(
-                //     *image, camera::PinholeCameraIntrinsic(
-                //                 camera::PinholeCameraIntrinsicParameters::Kinect2DepthCameraDefault));
-
-                auto point_cloud = *cloud.VoxelDownSample(0.03);
-
-                geometry::KDTreeSearchParamHybrid kd_tree_param(0.03 * 2, 30);
-
-                point_cloud.EstimateNormals(kd_tree_param);
-
-                // point_cloud转mesh
-                vector<double> distances = point_cloud.ComputeNearestNeighborDistance();
-                // 计算平均距离
-                double avg_dist = accumulate(distances.begin(), distances.end(), 0.0) / distances.size();
-                // 设置搜索半径
-                double radius = avg_dist * LARGE_RADIUS_MULTIPLIER;
-                vector<double> radii = {radius, radius * 2};
-                auto mesh = geometry::TriangleMesh::CreateFromPointCloudBallPivoting(point_cloud, radii);
-
-                Debug::CoutDebug("开始发送数据");
-                client.sendMessageFromMesh(mesh, 800);
                 break;
             }
             default: {

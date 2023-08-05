@@ -11,9 +11,7 @@ bool getLocalIp(char *ip) {
     int fd, intrface, retn = 0;        // fd是用户程序打开设备时使用open函数返回的文件标示符
     struct ifreq buf[INET_ADDRSTRLEN]; // INET_ADDRSTRLEN 宏定义，16
     struct ifconf ifc;                 // ifconf > ifreq
-    if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) >=
-        0) // 创建套接字，存放AF_INET代表IPV4，SOCK_DGRAM代表创建的是数据报套接字/无连接的套接字，后面一般为0
-    {
+    if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) >= 0) { // 创建套接字，存放AF_INET代表IPV4，SOCK_DGRAM代表创建的是数据报套接字/无连接的套接字，后面一般为0
         // 套接字创建成功
         ifc.ifc_len = sizeof(buf); // 所有网口加一起的长度 ifc.ifc_len 应该是一个出入参数
         // caddr_t,linux内核源码里定义的：typedef void *caddr_t；一般是一个int
