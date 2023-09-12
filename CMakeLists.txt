@@ -18,6 +18,8 @@ find_package(k4a REQUIRED)
 find_package(Eigen3 REQUIRED)
 include_directories("/usr/include/eigen3")
 
+# include_directories(/usr/local/include/btferret)
+
 # Protobuf
 find_package(Protobuf REQUIRED)
 include_directories(${Protobuf_INCLUDE_DIRS})
@@ -32,7 +34,6 @@ include_directories("/usr/local/include/open3d")
 # JSON
 find_package(jsoncpp REQUIRED)
 
-
 add_executable(EmergencyTeleoperatedRobotSystem
         src/EmergencyTeleoperatedRobotSystem.cpp 
         src/AzureKinectExtrinsics.cpp 
@@ -41,9 +42,82 @@ add_executable(EmergencyTeleoperatedRobotSystem
         src/Utility.cpp
         src/Bot.cpp
         src/Network.cpp
+        src/Bluetooth.cpp
+        src/Device.cpp
+        src/Serial.cpp
         ${PROTO_SRCS} 
         ${PROTO_HDRS} 
         )
+
+# add_executable(Recon
+#         src/Recon.cpp 
+#         src/AzureKinectExtrinsics.cpp 
+#         src/SoundSourceLocalization.cpp
+#         src/AzureKinect.cpp 
+#         src/Utility.cpp
+#         src/Bot.cpp
+#         src/Network.cpp
+#         ${PROTO_SRCS} 
+#         ${PROTO_HDRS} 
+#         )
+
+# target_link_libraries(Recon
+#         k4a::k4a
+#         ${Open3D_LIBRARIES}
+#         ${Eigen3_LIBRARIES}
+#         ${Protobuf_LIBRARIES}
+#         asound
+#         fftw3
+#         )
+
+# add_executable(Compete
+#         src/Compete.cpp 
+#         src/AzureKinectExtrinsics.cpp 
+#         src/SoundSourceLocalization.cpp
+#         src/AzureKinect.cpp 
+#         src/Utility.cpp
+#         src/Bot.cpp
+#         src/Network.cpp
+#         ${PROTO_SRCS} 
+#         ${PROTO_HDRS} 
+#         )
+
+# add_executable(Zhaoxin
+#         src/Zhaoxin.cpp 
+#         src/Bot.cpp
+#         src/Network.cpp
+#         ${PROTO_SRCS} 
+#         ${PROTO_HDRS} 
+#         )
+
+# target_link_libraries(Zhaoxin
+#         ${Open3D_LIBRARIES}
+#         ${Eigen3_LIBRARIES}
+#         ${Protobuf_LIBRARIES}
+#         )
+
+# target_link_libraries(Compete
+#         k4a::k4a
+#         ${Open3D_LIBRARIES}
+#         ${Eigen3_LIBRARIES}
+#         ${Protobuf_LIBRARIES}
+#         asound
+#         fftw3
+#         )
+
+# add_executable(Rotate
+#         src/Rotate.cpp 
+#         src/Utility.cpp
+#         src/Bot.cpp
+#         )
+
+# target_link_libraries(Rotate
+#         ${Open3D_LIBRARIES}
+#         ${Eigen3_LIBRARIES}
+#         asound
+#         )
+
+
 
 # add_executable(CasControlCar
 #         src/CasControlCar.cpp
@@ -61,6 +135,7 @@ target_link_libraries(EmergencyTeleoperatedRobotSystem
         ${Protobuf_LIBRARIES}
         asound
         fftw3
+        bluetooth
         )
 
 # target_link_libraries(CasControlCar

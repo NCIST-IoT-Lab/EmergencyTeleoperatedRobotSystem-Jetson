@@ -43,8 +43,6 @@ bool getLocalIp(char *ip) {
  * 创建服务器，阻塞进程，等待服务器连接。
  */
 etrs::net::Client::Client(const int port, std::function<void()> onConnect) {
-
-    // int etrs::net::creatServerSocket(int port) {
     int server_socket_fd = -1;
     this->fd = -1;
     struct sockaddr_in *addr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
@@ -64,13 +62,6 @@ etrs::net::Client::Client(const int port, std::function<void()> onConnect) {
     inet_aton(ip_local, &sockaddr.sin_addr); // 将一个字符串IP地址转换为一个32位的网络序列IP地址
 
     server_socket_fd = socket(AF_INET, SOCK_STREAM, 0); // 创建套接字
-
-    // setsockopt(server_socket_fd, IPPROTO_TCP, O_NDELAY, (char *)&flag, sizeof(int));
-    // int on = 1;
-    // int result = setsockopt(server_socket_fd, IPPROTO_TCP, TCP_NODELAY, (char *)&on, sizeof(int)); // 1 - on, 0 - off
-    // if (result == -1) {
-    //     Debug::CoutError("关闭 Nagle error");
-    // }
 
     if (server_socket_fd < 0) {
         Debug::CoutError("Socket 创建失败");
