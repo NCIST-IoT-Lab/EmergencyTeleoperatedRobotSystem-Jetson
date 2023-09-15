@@ -6,5 +6,11 @@ message BotArm{
         Angle = 0;
         COORDINATE = 1;
     }
-    bytes data_buffer = 1;
+    enum Side{
+        Left = 0;
+        Right = 1;
+    }
+    Side side = 1;
+    Mode mode = 2;
+    bytes data_buffer = 3;
 }

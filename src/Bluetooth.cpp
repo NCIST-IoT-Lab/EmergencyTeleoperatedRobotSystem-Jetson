@@ -52,6 +52,8 @@ int BleDevice::bleConnectL2cap(string mac_address) { // arm mac address: 08:B6:1
     }
     Debug::CoutSuccess("{}设备连接成功！fd = {}", this->device_name, fd);
 
+    modifyMtu(10);
+
     // MTU默认23字节： op code(1 字节)，handle(2 字节，小端)，payload(0-20字节)
     // char on[] = {0x12, 0x2d, 0x00, 0xFE, 0xFE, 0x0F, 0x22, 0x00, 0x00, 0x00, 0x00,
     //              0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1E, 0xFA};
@@ -104,16 +106,17 @@ int BleDevice::sendData(const char *data_buffer, const int data_length) {
 
 int BleDevice::recvData(char *recv_buffer, const int recv_length) {
     int len = -1;
-    while ((len = read(this->fd, recv_buffer, recv_length)) < 0)
-        ;
+    char buf[3] = {0x0A, 0x2a, 0x00};   //TODO: 目前写死
+    write(this->fd, buf, 3);
+    len = read(this->fd, recv_buffer, recv_length);
     return len;
 }
 
 int BleDevice::modifyMtu(const int mtu) {
     // FIXME: 未完成，以下代码无法修改MTU
-    unsigned char buf[23] = {0x02, 0x0A};
+    char buf[2] = {0x02, 0x0A};
     int len = -1;
-    if (len = write(this->fd, buf, sizeof(buf)) < 0) {
+    if (len = write(this->fd, buf, 2) < 0) {
         Debug::CoutError("修改MTU失败");
         return -1;
     }

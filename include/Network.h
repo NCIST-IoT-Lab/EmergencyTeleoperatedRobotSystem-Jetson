@@ -18,30 +18,30 @@
 using namespace etrs::utility;
 
 namespace etrs::net {
-// bool getLocalIp(char *ip);
+    // bool getLocalIp(char *ip);
 
-int creatServerSocket(int port);
+    int creatServerSocket(int port);
 
-namespace proto {
-    bool send_message(int fd, google::protobuf::Message &message);
-    bool send_exit_mesh_message(int fd);
-} // namespace proto
+    namespace proto {
+        bool send_message(int fd, google::protobuf::Message &message);
+        bool send_exit_mesh_message(int fd);
+    } // namespace proto
 
-class Client {
-private:
-    int fd;
-    mutex mutex_;
+    class Client {
+    private:
+        int fd;
+        mutex mutex_;
 
-public:
-    // 反馈函数
-    Client(const int port, std::function<void()> onConnect = nullptr);
-    bool sendMessage(google::protobuf::Message &message);
-    int recvData(unsigned char *recv_buffer, const int recv_length);
-    bool recvMessage(etrs::proto::DataMessage &message);
-    bool sendExitMeshMessage();
-    int sendMessageFromMesh(std::shared_ptr<open3d::geometry::TriangleMesh> mesh_ptr, const int interval);
-    int sendMessageFromMesh(open3d::geometry::TriangleMesh mesh, const int interval);
-};
+    public:
+        // 反馈函数
+        explicit Client(const int port, std::function<void()> onConnect = nullptr);
+        bool sendMessage(google::protobuf::Message &message);
+        int recvData(unsigned char *recv_buffer, const int recv_length);
+        bool recvMessage(etrs::proto::DataMessage &message);
+        bool sendExitMeshMessage();
+        int sendMessageFromMesh(std::shared_ptr<open3d::geometry::TriangleMesh> mesh_ptr, const int interval);
+        int sendMessageFromMesh(open3d::geometry::TriangleMesh mesh, const int interval);
+    };
 
 } // namespace etrs::net
 

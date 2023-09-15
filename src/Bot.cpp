@@ -97,52 +97,10 @@ int serialTX(int fd, ComuType comutype, unsigned char databuff[]) {
     return ret;
 }
 
-// etrs::bot::BotArm::BotArm(string serial_port_name = DEFAULT_SERIAL_PORT_NAME) {
-//     // regex pattern("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$");
-//     is_bluetooth = MacAddress::isValidMacAddress(serial_port_name);
-//     if (is_bluetooth) {
-
-//     } else {
-//         struct termios newtio;
-//         tcgetattr(this->fd, &newtio);
-//         newtio.c_cflag &= ~CSIZE;         // 数据位屏蔽 将c_cflag全部清零
-//         newtio.c_cflag = B115200;         // set bound
-//         newtio.c_cflag |= CS8;            // 数据位8
-//         newtio.c_cflag |= CLOCAL | CREAD; // 使驱动程序启动接收字符装置，同时忽略串口信号线的状态
-//         newtio.c_iflag &= ~(IXON | IXOFF | IXANY); // 禁用软件流控制
-//         newtio.c_oflag &= ~OPOST; // 使用原始输出，就是禁用输出处理，使数据能不经过处理、过滤地完整地输出到串口接口。
-//         newtio.c_lflag &= ~(ICANON | ECHO | ECHOE |
-//                             ISIG); // 在原始模式下，串口输入数据是不经过处理的，在串口接口接收的数据被完整保留。
-//         newtio.c_cc[VMIN] = 1;
-//         newtio.c_cc[VTIME] = 0;
-//         this->fd = open(serial_port_name.c_str(), O_RDWR); // 读写方式打开串口
-//         if (this->fd < 0) {
-//             Debug::CoutError("机械臂设备连接失败！bot_arm_fd = {}", this->fd);
-//             return;
-//         }
-//         Debug::CoutSuccess("机械臂设备连接成功！bot_arm_fd = {}", this->fd);
-
-//         if (tcsetattr(this->fd, TCSADRAIN, &newtio) != 0) {
-//             Debug::CoutError("串口初始化失败！");
-//             return;
-//         }
-//     }
-//     Debug::CoutSuccess("机械臂设备初始化成功！");
-//     this->command_buffer[0] = 0xFE;
-//     this->command_buffer[1] = 0xFE;
-
-//     this->gripper_buffer[0] = 0xFE;
-//     this->gripper_buffer[1] = 0xFE;
-//     this->gripper_buffer[2] = 0x04;
-//     this->gripper_buffer[3] = CommandSet::SEND_GRIPPER_ANGLE;
-//     // 4
-//     this->gripper_buffer[5] = 0x14;
-//     this->gripper_buffer[6] = 0xFA;
-// }
 etrs::bot::BotArm::BotArm(const string port_or_address, const string device_name) : port_or_address(port_or_address) {
     bool is_mac_address = MacAddress::isValidMacAddress(port_or_address);
     if (is_mac_address) {         // 如果是MAC地址
-        char op_code[1] = {0x12}; // TODO: 目前写死，需要修改成可变的
+        char op_code[1] = {0x52}; // TODO: 目前写死，需要修改成可变的
         char handle[2] = {0x2d, 0x00};
         this->device = new etrs::device::bt::BleDevice(port_or_address, op_code, handle, device_name);
     } else { // 否则是串口地址
@@ -162,26 +120,11 @@ etrs::bot::BotArm::BotArm(const string port_or_address, const string device_name
 
 void BotArm::setDeviceName(const string device_name) { this->device->setDeviceName(device_name); }
 
-// bool etrs::bot::BotArm::reset() {
-//     unsigned char databuff[16] = {0};
-//     memset(databuff, 0, 16);                      // 清空数组
-//     databuff[12] = 0x1e;                          // 速度
-//     serialTX(this->fd, POST_ALL_ANGLE, databuff); // 发送数据
-//     return true;
-// }
-
 bool etrs::bot::BotArm::reset() {
     char reset_buffer[18] = {0xFE, 0xFE, 0x0F, 0x22, 0x00, 0x00, 0x00, 0x00, 0x00,
                              0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1E, 0xFA};
     return execute(reset_buffer, 18);
 }
-
-// bool etrs::bot::BotArm::execute(const char *data_buffer, int length) {
-//     if (write(this->fd, data_buffer, length) < 0) {
-//         return false;
-//     }
-//     return true;
-// }
 
 bool etrs::bot::BotArm::execute(const char *data_buffer, const int data_length) {
     return this->device->sendData(data_buffer, data_length) > 0;

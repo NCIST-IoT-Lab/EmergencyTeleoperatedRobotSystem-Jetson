@@ -5,20 +5,18 @@
 
 using namespace etrs::utility;
 
-namespace etrs {
-    namespace replay {
-        class Recoder {
-        private:
-            string file_path;
-        public:
-            Recoder();
-            ~Recoder();
+namespace etrs::replay {
+    class Recoder {
+    private:
+        string file_path;
 
-            Recoder(const string file_path);
-            
-        };
+    public:
+        explict Recoder();
+        ~Recoder();
 
-    }; // namespace replay
-} // namespace etrs
+        explict Recoder(const string file_path);
+    };
+
+} // namespace etrs::replay
 
 #endif // CASNETWORK_H

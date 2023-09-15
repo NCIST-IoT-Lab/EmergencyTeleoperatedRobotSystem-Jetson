@@ -3,5 +3,10 @@ package etrs.proto;
 
 // 夹爪
 message BotGripper{
-    bool status = 1;
+    enum Side{
+        Left = 0;
+        Right = 1;
+    }
+    Side side = 1;
+    bool status = 2;
 }

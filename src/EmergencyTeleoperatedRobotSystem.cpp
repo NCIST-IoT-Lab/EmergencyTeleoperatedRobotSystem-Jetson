@@ -10,11 +10,11 @@
 
 #include "AzureKinect.h"
 #include "AzureKinectExtrinsics.h"
+#include "Bluetooth.h"
 #include "Bot.h"
 #include "DataMessage.pb.h"
 #include "Network.h"
 #include "SoundSourceLocalization.h"
-#include "Bluetooth.h"
 #include "Utility.h"
 
 #include <iostream>
@@ -74,7 +74,8 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
     int CHANNELS = program_config.getInt("channels");
     string MICROPHONE_NAME = program_config.get("microphone_name");
     string BOT_ARM_SERIAL_PORT_NAME = program_config.get("bot_arm_serial_prot_name");
-    string BOT_ARM_MAC_ADDRESS = program_config.get("bot_arm_mac_address");
+    string LEFT_BOT_ARM_MAC_ADDRESS = program_config.get("left_bot_arm_mac_address");
+    string RIGHT_BOT_ARM_MAC_ADDRESS = program_config.get("right_bot_arm_mac_address");
     string BOT_CAR_SERIAL_PORT_NAME = program_config.get("bot_car_serial_prot_name");
     string STM32_SERIAL_PORT_NAME = program_config.get("stm32_serial_prot_name");
     string FIRST_MOTOR_ROTATION = program_config.get("first_motor_rotation");
@@ -93,8 +94,9 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
     k4a::device device;
     // k4a_device_t device;
 
-    // etrs::bot::BotArm bot_arm(BOT_ARM_SERIAL_PORT_NAME, "机械臂");
-    etrs::bot::BotArm bot_arm(BOT_ARM_MAC_ADDRESS, "机械臂");
+    // etrs::bot::BotArm bot_arm_left(BOT_ARM_SERIAL_PORT_NAME, "机械臂");
+    etrs::bot::BotArm bot_arm_left(LEFT_BOT_ARM_MAC_ADDRESS, "左机械臂");
+    etrs::bot::BotArm bot_arm_right(RIGHT_BOT_ARM_MAC_ADDRESS, "右机械臂");
 
     etrs::bot::BotMotor bot_motor(STM32_SERIAL_PORT_NAME);
     etrs::bot::BotCar bot_car(BOT_CAR_SERIAL_PORT_NAME, (char)0x12, 0.62);
@@ -129,7 +131,7 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
     // // 稳定化
     // etrs::kinect::stabilizeCamera(device);
     // cout << "------------------------------------" << endl;
-    // cout << "----- 成功启动 Azure Kinect DK -nil----" << endl;
+    // cout << "----- 成功启动 Azure Kinect DK -----" << endl;
     // cout << "------------------------------------" << endl;
 
     // k4a::calibration k4a_calibration = device.get_calibration(config.depth_mode, config.color_resolution);
@@ -141,9 +143,27 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
     // k4a_transformation_t k4a_transformation = k4a_transformation_create(&k4a_calibration);
 
     if (IS_CONNECT_ARM) {
-        bot_arm.reset();
+        // bot_arm_left.reset();
+        bot_arm_right.reset();
         Debug::CoutSuccess("机械臂复位成功");
     }
+
+    // thread receive_bot_arm_thread([&]() {
+    //     char bot_arm_buffer[64];
+    //     while (true) {
+    //         int len = -1;
+    //         if ((len = bot_arm_left.recvData(bot_arm_buffer, 64)) < 0) {
+    //             cout << 1 << endl;
+    //             continue;
+    //         };
+    //         cout << "bot_arm_left: ";
+    //         // 打印
+    //         for (int i = 0; i < len; i++) {
+    //             cout << (int)bot_arm_buffer[i] << " ";
+    //         }
+    //         cout << endl;
+    //     }
+    // });
 
     // LED亮红
     bot_led.setLedColor(etrs::bot::BotLed::LedColor::RED);
@@ -189,6 +209,7 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
     //     }
     // });
 
+    //
     thread receive_client_thread([&]() {
         char client_buffer[1024];
         while (true) {
@@ -211,7 +232,7 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                     break;
                 }
                 case (int)etrs::proto::DataMessage::BOT_CAR: {
-                    Debug::CoutSuccess("收到机器人数据");
+                    Debug::CoutSuccess("收到底盘车数据");
                     int seq_length = data_message.bot_car().move_sequence_size();
                     int sequence_flag = data_message.bot_car().move_sequence(0);
                     Debug::CoutDebug("序列长度: {}", seq_length);
@@ -225,19 +246,45 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                     break;
                 }
                 case (int)etrs::proto::DataMessage::BOT_ARM: {
-                    // Debug::CoutSuccess("收到机械臂数据");
+                    Debug::CoutSuccess("收到机械臂数据");
                     int length = data_message.bot_arm().data_buffer().length();
-                    bot_arm.execute(data_message.bot_arm().data_buffer().data(), length);
-                    bot_arm.sendCommand(etrs::bot::BotArm::CommandSet::READ_ANGLE);
+                    switch ((int)data_message.bot_arm().side()) {
+                        case (int)etrs::proto::BotArm::Left: {
+                            Debug::CoutSuccess("左机械臂");
+                            bot_arm_left.execute(data_message.bot_arm().data_buffer().data(), length);
+                            // bot_arm_left.sendCommand(etrs::bot::BotArm::CommandSet::READ_ANGLE);
+                            // int length = data_message.bot_arm().data_buffer().length();
+                            break;
+                        }
+                        case (int)etrs::proto::BotArm::Right: {
+                            Debug::CoutSuccess("右机械臂");
+                            bot_arm_right.execute(data_message.bot_arm().data_buffer().data(), length);
+                            break;
+                        }
+                    }
                     break;
                 }
                 case (int)etrs::proto::DataMessage::BOT_GRIPPER: {
                     Debug::CoutSuccess("收到机械臂夹爪数据");
-                    int status = data_message.bot_gripper().status();
-                    if (status == 1) {
-                        bot_arm.openGripper(0x32);
-                    } else if (status == 0) {
-                        bot_arm.closeGripper(0x32);
+                    switch ((int)data_message.bot_gripper().side()) {
+                        case (int)etrs::proto::BotGripper::Left: {
+                            int status = data_message.bot_gripper().status();
+                            if (status == 1) {
+                                bot_arm_left.openGripper(0x32);
+                            } else if (status == 0) {
+                                bot_arm_left.closeGripper(0x32);
+                            }
+                            break;
+                        }
+                        case (int)etrs::proto::BotGripper::Right: {
+                            int status = data_message.bot_gripper().status();
+                            if (status == 1) {
+                                bot_arm_right.openGripper(0x32);
+                            } else if (status == 0) {
+                                bot_arm_right.closeGripper(0x32);
+                            }
+                            break;
+                        }
                     }
                     break;
                 }
@@ -327,7 +374,7 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                     if (!need_reconnstrcution) {
                         continue;
                     }
-                    
+
                     need_reconnstrcution = false;
 
                     bot_motor.rotate(angle / 2, 3000);
@@ -377,6 +424,7 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                             try {
                                 result = model.TrackFrameToModel(input_frame, raycast_frame, depth_scale, depth_max,
                                                                  depth_diff);
+                                // TODO: 打印 result.transformation_ 的值，看看位移值是否为0，再比较一下旋转值和IMU获取的旋转值是否一致？
 
                                 core::Tensor t1 =
                                     etrs::utility::Transformation::RemoveYTranslationT(result.transformation_);
@@ -457,8 +505,8 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
 
                     // k4a_transformation.depth_image_to_color_camera(depth_image_item, &transformed_depthImage);
 
-                    // k4a_transformation.depth_image_to_point_cloud(transformed_depthImage, K4A_CALIBRATION_TYPE_COLOR,
-                    // &point_cloud_image);
+                    // k4a_transformation.depth_image_to_point_cloud(transformed_depthImage,
+                    // K4A_CALIBRATION_TYPE_COLOR, &point_cloud_image);
 
                     cloud.points_.resize(color_image_width_pixels * color_image_height_pixels);
                     cloud.colors_.resize(color_image_width_pixels * color_image_height_pixels);

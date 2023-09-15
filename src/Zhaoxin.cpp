@@ -82,9 +82,10 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
             //     continue;
             // }
             len = recv(fd, recv_buffer, 1024, 0);
-            cout << "len: " << len << endl;;
-           
-            if (len <= 0 ||  !data_message.ParseFromArray(recv_buffer, len)) {
+            cout << "len: " << len << endl;
+            ;
+
+            if (len <= 0 || !data_message.ParseFromArray(recv_buffer, len)) {
                 continue;
             }
             switch ((int)data_message.type()) {
