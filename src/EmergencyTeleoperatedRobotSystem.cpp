@@ -96,7 +96,7 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
 
     // etrs::bot::BotArm bot_arm_left(BOT_ARM_SERIAL_PORT_NAME, "机械臂");
     etrs::bot::BotArm bot_arm_left(LEFT_BOT_ARM_MAC_ADDRESS, "左机械臂");
-    etrs::bot::BotArm bot_arm_right(RIGHT_BOT_ARM_MAC_ADDRESS, "右机械臂");
+    // etrs::bot::BotArm bot_arm_right(RIGHT_BOT_ARM_MAC_ADDRESS, "右机械臂");
 
     etrs::bot::BotMotor bot_motor(STM32_SERIAL_PORT_NAME);
     etrs::bot::BotCar bot_car(BOT_CAR_SERIAL_PORT_NAME, (char)0x12, 0.62);
@@ -143,8 +143,8 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
     // k4a_transformation_t k4a_transformation = k4a_transformation_create(&k4a_calibration);
 
     if (IS_CONNECT_ARM) {
-        // bot_arm_left.reset();
-        bot_arm_right.reset();
+        bot_arm_left.reset();
+        // bot_arm_right.reset();
         Debug::CoutSuccess("机械臂复位成功");
     }
 
@@ -165,13 +165,54 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
     //     }
     // });
 
+    char ch;
+    thread control_thread([&]() {
+        while (true) {
+            cin >> ch;
+            // ch = getch(); // 获取按下的键值
+            if (ch == 'w' || ch == 'W') {
+                std::cout << "向前移动" << std::endl;
+                bot_car.moveForwardDistance(10);
+            } else if (ch == 'a' || ch == 'A') {
+                std::cout << "向左转动" << std::endl;
+                bot_car.autoTurnByAngle(90);
+            } else if (ch == 's' || ch == 'S') {
+                std::cout << "向后移动" << std::endl;
+                bot_car.moveBackwardDistance(10);
+            } else if (ch == 'd' || ch == 'D') {
+                std::cout << "向右转动" << std::endl;
+                bot_car.autoTurnByAngle(-90);
+            } else if (ch == 'x' || ch == 'X' || ch == ' ') {
+                std::cout << "停止移动" << std::endl;
+                bot_car.stopCar();
+            } else if (ch == 'r' || ch == 'R') {
+                bot_motor.rotate(-45, 3000);
+                std::cout << "右转" << std::endl;
+            } else if (ch == 'l' || ch == 'L') {
+                bot_motor.rotate(45, 3000);
+                std::cout << "左转" << std::endl;
+            } else {
+                std::cout << "未知操作" << std::endl;
+            }
+        }
+    });
+
     // LED亮红
     bot_led.setLedColor(etrs::bot::BotLed::LedColor::RED);
 
     // 创建服务器等待连接
-    etrs::net::Client client(SERVER_PORT, [&]() {
+    etrs::net::Client client(SERVER_PORT);
+    client.createServerSocket();
+    client.acceptConnection([&]() {
         // LED亮绿
         bot_led.setLedColor(etrs::bot::BotLed::LedColor::GREEN);
+        Debug::CoutSuccess("Client 连接成功");
+    });
+
+    etrs::net::Client client1(SERVER_PORT, client.server_socket_fd);
+    client1.createServerSocket();
+    client1.acceptConnection([&]() {
+        Debug::CoutSuccess("Client 2 连接成功");
     });
 
     // 定义互斥锁
@@ -184,6 +225,7 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
     int flag_recording = 0;
     bool kinect_going = true;
 
+    // TODO: 实时模式，留给下一届吧
     // etrs::proto::KinectMode::Mode kinect_mode = etrs::proto::KinectMode::REAL_TIME;
     etrs::proto::KinectMode::Mode kinect_mode = etrs::proto::KinectMode::RECONSTRCUTION;
 
@@ -209,7 +251,6 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
     //     }
     // });
 
-    //
     thread receive_client_thread([&]() {
         char client_buffer[1024];
         while (true) {
@@ -250,15 +291,15 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                     int length = data_message.bot_arm().data_buffer().length();
                     switch ((int)data_message.bot_arm().side()) {
                         case (int)etrs::proto::BotArm::Left: {
-                            Debug::CoutSuccess("左机械臂");
+                            // Debug::CoutSuccess("左机械臂");
                             bot_arm_left.execute(data_message.bot_arm().data_buffer().data(), length);
                             // bot_arm_left.sendCommand(etrs::bot::BotArm::CommandSet::READ_ANGLE);
                             // int length = data_message.bot_arm().data_buffer().length();
                             break;
                         }
                         case (int)etrs::proto::BotArm::Right: {
-                            Debug::CoutSuccess("右机械臂");
-                            bot_arm_right.execute(data_message.bot_arm().data_buffer().data(), length);
+                            // Debug::CoutSuccess("右机械臂");
+                            // bot_arm_right.execute(data_message.bot_arm().data_buffer().data(), length);
                             break;
                         }
                     }
@@ -279,9 +320,9 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                         case (int)etrs::proto::BotGripper::Right: {
                             int status = data_message.bot_gripper().status();
                             if (status == 1) {
-                                bot_arm_right.openGripper(0x32);
+                                // bot_arm_right.openGripper(0x32);
                             } else if (status == 0) {
-                                bot_arm_right.closeGripper(0x32);
+                                // bot_arm_right.closeGripper(0x32);
                             }
                             break;
                         }
@@ -310,9 +351,11 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
             // 等待接受到stm32的数据
             bot_motor.recvData(stm32_buffer, 32);
             char data_type = stm32_buffer[0];
+            // Debug::CoutDebug("OKOKOK，STM32: {}", data_type);
             // 解析stm32数据
             switch (data_type) {
-                case 'M': {
+                case 'M':
+                case 'm': {
                     if (stm32_buffer[4] == 'D' && stm32_buffer[5] == 'O' && stm32_buffer[6] == 'N' &&
                         stm32_buffer[7] == 'E') {
                         Debug::CoutDebug("舵机旋转完成");
@@ -322,7 +365,8 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                     // 舵机旋转反馈
                     break;
                 }
-                case 'T': {
+                case 'T':
+                case 't': {
                     float humi = stm32_buffer[1] + stm32_buffer[2] / 10.0;
                     float temp = stm32_buffer[3] + stm32_buffer[4] / 10.0;
                     // Debug::CoutDebug("温湿度传感器数据: {} {}", humi, temp);
@@ -377,105 +421,131 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
 
                     need_reconnstrcution = false;
 
-                    bot_motor.rotate(angle / 2, 3000);
-                    while (flag_recording < 1)
-                        ;
-                    // device.close();
+                    bot_motor.rotate(-angle / 2, 3000, [&]() { onRotated(program_config, FIRST_MOTOR_ROTATION); });
+                    this_thread::sleep_for(chrono::seconds(5));
+                    bot_motor.rotate(angle, 10000, [&]() { onRotated(program_config, FIRST_MOTOR_ROTATION); });
+                    this_thread::sleep_for(chrono::seconds(15));
+                    bot_motor.rotate(-angle / 2, 3000, [&]() { onRotated(program_config, FIRST_MOTOR_ROTATION); });
 
-                    sensor.Connect(0);
-                    Debug::CoutSuccess("相机初始化成功");
+                    if (0) {
+                        this_thread::sleep_for(chrono::seconds(2));
+                        bot_motor.rotate(-angle / 2, 3000, [&]() { onRotated(program_config, FIRST_MOTOR_ROTATION); });
 
-                    std::shared_ptr<geometry::RGBDImage> im_rgbd;
+                        while (flag_recording < 1)
+                            ;
+                        // device.close();
 
-                    // 读取第一个有效帧
-                    do {
-                        im_rgbd = sensor.CaptureFrame(true);
-                    } while (im_rgbd == nullptr);
+                        sensor.Connect(0);
+                        Debug::CoutSuccess("相机初始化成功");
 
-                    // 初始化 SLAM 模型
-                    core::Tensor T_frame_to_model = core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
-                    t::pipelines::slam::Model model(voxel_size, block_resolution, block_count, T_frame_to_model, cuda_);
+                        std::shared_ptr<geometry::RGBDImage> im_rgbd;
 
-                    t::pipelines::slam::Frame input_frame(im_rgbd->depth_.height_, im_rgbd->depth_.width_, intrinsic_t,
-                                                          cuda_);
-                    t::pipelines::slam::Frame raycast_frame(im_rgbd->depth_.height_, im_rgbd->depth_.width_,
-                                                            intrinsic_t, cuda_);
+                        // 读取第一个有效帧
+                        do {
+                            im_rgbd = sensor.CaptureFrame(true);
+                        } while (im_rgbd == nullptr);
 
-                    int i = 0;
+                        // 初始化 SLAM 模型
+                        core::Tensor T_frame_to_model =
+                            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
+                        t::pipelines::slam::Model model(voxel_size, block_resolution, block_count, T_frame_to_model,
+                                                        cuda_);
 
-                    // 旋转电机
-                    bot_motor.rotate(angle, MOTOR_SPEED);
-                    while (flag_recording < 2) {
-                        im_rgbd = sensor.CaptureFrame(true);
-                        if (im_rgbd == nullptr) { // 读取失败则跳过
-                            continue;
-                        }
+                        t::pipelines::slam::Frame input_frame(im_rgbd->depth_.height_, im_rgbd->depth_.width_,
+                                                              intrinsic_t, cuda_);
+                        t::pipelines::slam::Frame raycast_frame(im_rgbd->depth_.height_, im_rgbd->depth_.width_,
+                                                                intrinsic_t, cuda_);
 
-                        Debug::CoutInfo("处理中: {}", i);
+                        int i = 0;
 
-                        input_frame.SetDataFromImage("depth", t::geometry::Image::FromLegacy(im_rgbd->depth_, cuda_));
-                        input_frame.SetDataFromImage("color", t::geometry::Image::FromLegacy(im_rgbd->color_, cuda_));
+                        // 旋转电机
+                        bot_motor.rotate(angle, MOTOR_SPEED,
+                                         [&]() { onRotated(program_config, FIRST_MOTOR_ROTATION); });
+                        while (flag_recording < 2) {
+                            im_rgbd = sensor.CaptureFrame(true);
+                            if (im_rgbd == nullptr) { // 读取失败则跳过
+                                continue;
+                            }
 
-                        // 里程计跟踪
-                        bool tracking_success = true;
+                            Debug::CoutInfo("处理中: {}", i);
 
-                        if (i > 0) {
-                            t::pipelines::odometry::OdometryResult result;
-                            try {
-                                result = model.TrackFrameToModel(input_frame, raycast_frame, depth_scale, depth_max,
-                                                                 depth_diff);
-                                // TODO: 打印 result.transformation_ 的值，看看位移值是否为0，再比较一下旋转值和IMU获取的旋转值是否一致？
+                            input_frame.SetDataFromImage("depth",
+                                                         t::geometry::Image::FromLegacy(im_rgbd->depth_, cuda_));
+                            input_frame.SetDataFromImage("color",
+                                                         t::geometry::Image::FromLegacy(im_rgbd->color_, cuda_));
 
-                                core::Tensor t1 =
-                                    etrs::utility::Transformation::RemoveYTranslationT(result.transformation_);
+                            // 里程计跟踪
+                            bool tracking_success = true;
 
-                                // string d = FIRST_MOTOR_ROTATION == "F" ? "R" : "F";
-                                core::Tensor t2 = etrs::utility::Transformation::RemoveXZRotationT(t1, "F");
-                                double translation_norm = etrs::utility::Transformation::CalculateTranslationNormT(t2);
+                            if (i > 0) {
+                                t::pipelines::odometry::OdometryResult result;
+                                try {
+                                    result = model.TrackFrameToModel(input_frame, raycast_frame, depth_scale, depth_max,
+                                                                     depth_diff);
+                                    // TODO: 打印 result.transformation_
+                                    // 的值，看看位移值是否为0，再比较一下旋转值和IMU获取的旋转值是否一致？
 
-                                if (translation_norm < 0.15) {
-                                    T_frame_to_model = T_frame_to_model.Matmul(t2);
-                                } else {
+                                    core::Tensor t1 =
+                                        etrs::utility::Transformation::RemoveYTranslationT(result.transformation_);
+
+                                    // string d = FIRST_MOTOR_ROTATION == "F" ? "R" : "F";
+                                    core::Tensor t2 = etrs::utility::Transformation::RemoveXZRotationT(t1, "F");
+                                    double translation_norm =
+                                        etrs::utility::Transformation::CalculateTranslationNormT(t2);
+
+                                    if (translation_norm < 0.15) {
+                                        T_frame_to_model = T_frame_to_model.Matmul(t2);
+                                    } else {
+                                        tracking_success = false;
+                                        Debug::CoutError("里程计跟踪失败！");
+                                    }
+                                    // Debug::CoutInfo("fitness: {}， translation_norm: {}", result.fitness_,
+                                    // translation_norm);
+
+                                } catch (const runtime_error &e) {
+                                    Debug::CoutError("{}", e.what());
                                     tracking_success = false;
-                                    Debug::CoutError("里程计跟踪失败！");
+                                    --i;
                                 }
-                                // Debug::CoutInfo("fitness: {}， translation_norm: {}", result.fitness_,
-                                // translation_norm);
+                            }
 
-                            } catch (const runtime_error &e) {
-                                Debug::CoutError("{}", e.what());
-                                tracking_success = false;
-                                --i;
+                            if (tracking_success) {
+                                model.UpdateFramePose(i, T_frame_to_model);
+                                model.Integrate(input_frame, depth_scale, depth_max, trunc_voxel_multiplier);
+                                model.SynthesizeModelFrame(raycast_frame, depth_scale, 0.1, depth_max,
+                                                           trunc_voxel_multiplier, false);
+                                i++;
                             }
                         }
+                        sensor.Disconnect();
 
-                        if (tracking_success) {
-                            model.UpdateFramePose(i, T_frame_to_model);
-                            model.Integrate(input_frame, depth_scale, depth_max, trunc_voxel_multiplier);
-                            model.SynthesizeModelFrame(raycast_frame, depth_scale, 0.1, depth_max,
-                                                       trunc_voxel_multiplier, false);
-                            i++;
-                        }
+                        // TODO: tensor旋转是否可用?
+                        core::Tensor rotate_tensor = open3d::core::eigen_converter::EigenMatrixToTensor(
+                            Eigen::AngleAxisd(-(angle / 2) / 180.0 * M_PI, Eigen::Vector3d(0, 1, 0))
+                                .toRotationMatrix());
+                        core::Tensor center_tensor =
+                            core::Tensor::Zeros({3}, core::Dtype::Float64, core::Device("CPU:0"));
+                        auto mesh = model.ExtractTriangleMesh().Rotate(rotate_tensor, center_tensor);
+                        // 点云数据
+                        // auto point_cloud = model.ExtractPointCloud();
+                        auto legacy_mesh = mesh.ToLegacy();
                     }
-                    sensor.Disconnect();
 
-                    // TODO: tensor旋转是否可用?
-                    core::Tensor rotate_tensor = open3d::core::eigen_converter::EigenMatrixToTensor(
-                        Eigen::AngleAxisd(-angle / 180.0 * M_PI, Eigen::Vector3d(0, 1, 0)).toRotationMatrix());
-                    core::Tensor center_tensor = core::Tensor::Zeros({3}, core::Dtype::Float64, core::Device("CPU:0"));
-                    auto mesh = model.ExtractTriangleMesh().Rotate(rotate_tensor, center_tensor);
-                    auto legacy_mesh = mesh.ToLegacy();
-
+                    // FIXME:
                     // 发送面片数据
-                    Debug::CoutDebug("保存面片数据中");
-                    io::WriteTriangleMesh("ply/slam_mesh.ply", legacy_mesh);
+                    // Debug::CoutDebug("保存面片数据中");
+                    // io::WriteTriangleMesh("ply/sm.ply", legacy_mesh);
 
-                    bot_motor.rotate(-angle / 2, 3000);
-                    while (flag_recording < 3)
-                        ;
+                    geometry::TriangleMesh legacy_mesh1;
+                    io::ReadTriangleMesh("ply/sm.ply", legacy_mesh1);
+
+                    // bot_motor.rotate(-angle / 2, 3000, [&]() { onRotated(program_config, FIRST_MOTOR_ROTATION); });
+                    // while (flag_recording < 3)
+                    //     ;
 
                     Debug::CoutDebug("开始发送数据");
-                    client.sendMessageFromMesh(legacy_mesh, 800);
+                    client.sendMessageFromMesh(legacy_mesh1, 800);
+                    client1.sendMessageFromMesh(legacy_mesh1, 800);
                 }
                 break;
             }

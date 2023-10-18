@@ -123,9 +123,10 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
             // 解析stm32数据
             switch (data_type) {
                 case 'M': {
+                    Debug::CoutDebug("!!!");
                     if (stm32_buffer[4] == 'D' && stm32_buffer[5] == 'O' && stm32_buffer[6] == 'N' &&
                         stm32_buffer[7] == 'E') {
-                        Debug::CoutDebug("舵机旋转完成");
+                        Debug::CoutDebug("舵机旋转完成!!!");
                         flag_recording++;
                     }
                     break;
@@ -156,7 +157,7 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
     while (true) {
         kinect_going = true;
 
-        bot_motor.rotate(-an, 3000, [&]() { onRotated(program_config, FIRST_MOTOR_ROTATION); });
+        bot_motor.rotate(-an, 3000);
 
         core::Tensor intrinsic_t =
             core::Tensor::Init<double>({{963.205, 0, 1012.87}, {0, 962.543, 777.369}, {0, 0, 1}});
@@ -183,7 +184,9 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
 
         int i = 0;
 
-        bot_motor.rotate(an * 2, MOTOR_SPEED, [&]() { onRotated(program_config, FIRST_MOTOR_ROTATION); });
+        this_thread::sleep_for(chrono::milliseconds(1000 * 3));
+
+        bot_motor.rotate(an * 2, MOTOR_SPEED);
 
         while (flag_recording == 1) {
             cout << flag_recording << endl;

@@ -11,14 +11,15 @@ bool getLocalIp(char *ip) {
     int fd, intrface, retn = 0;        // fd是用户程序打开设备时使用open函数返回的文件标示符
     struct ifreq buf[INET_ADDRSTRLEN]; // INET_ADDRSTRLEN 宏定义，16
     struct ifconf ifc;                 // ifconf > ifreq
-    if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) >= 0) { // 创建套接字，存放AF_INET代表IPV4，SOCK_DGRAM代表创建的是数据报套接字/无连接的套接字，后面一般为0
+    if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) >=
+        0) { // 创建套接字，存放AF_INET代表IPV4，SOCK_DGRAM代表创建的是数据报套接字/无连接的套接字，后面一般为0
         // 套接字创建成功
         ifc.ifc_len = sizeof(buf); // 所有网口加一起的长度 ifc.ifc_len 应该是一个出入参数
         // caddr_t,linux内核源码里定义的：typedef void *caddr_t；一般是一个int
         ifc.ifc_buf = (caddr_t)buf;                // 开辟网口缓冲区
         if (!ioctl(fd, SIOCGIFCONF, (char *)&ifc)) // linux系统调用函数，SIOCGIFCONF   获取所有接口(网口)的清单
         {
-            intrface = ifc.ifc_len / sizeof(struct ifreq);             // 获取到int值的网口总数
+            intrface = ifc.ifc_len / sizeof(struct ifreq); // 获取到int值的网口总数
             while (intrface-- > 0) {
                 if (!(ioctl(fd, SIOCGIFADDR, (char *)&buf[intrface]))) // SIOCGIFADDR 获取接口(网口)地址
                 {
@@ -42,17 +43,17 @@ bool getLocalIp(char *ip) {
 /**
  * 创建服务器，阻塞进程，等待服务器连接。
  */
-etrs::net::Client::Client(const int port, std::function<void()> onConnect) {
-    int server_socket_fd = -1;
-    this->fd = -1;
-    struct sockaddr_in *addr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
-    socklen_t addr_len = (socklen_t)sizeof(*addr);
-    memset(addr, 0, sizeof(*addr));
+etrs::net::Client::Client(const int port) : LocalProcessCommunicator(port) {}
 
+etrs::net::Client::Client(const int port, int server_socket_fd) : LocalProcessCommunicator(port) {
+    this->server_socket_fd = server_socket_fd;
+}
+
+int etrs::net::Client::createServerSocket() {
     struct sockaddr_in sockaddr;
     memset(&sockaddr, 0, sizeof(sockaddr));
     sockaddr.sin_family = AF_INET;
-    sockaddr.sin_port = htons(port); // 端口号
+    sockaddr.sin_port = htons(this->port); // 端口号
 
     char ip_local[32 + 1] = {0};
     if (!getLocalIp(ip_local)) {
@@ -61,30 +62,38 @@ etrs::net::Client::Client(const int port, std::function<void()> onConnect) {
     }
     inet_aton(ip_local, &sockaddr.sin_addr); // 将一个字符串IP地址转换为一个32位的网络序列IP地址
 
-    server_socket_fd = socket(AF_INET, SOCK_STREAM, 0); // 创建套接字
+    this->server_socket_fd = socket(AF_INET, SOCK_STREAM, 0); // 创建套接字
 
-    if (server_socket_fd < 0) {
+    if (this->server_socket_fd < 0) {
         Debug::CoutError("Socket 创建失败");
         exit(0);
     }
 
-    if (bind(server_socket_fd, (struct sockaddr *)&sockaddr, sizeof(sockaddr)) != 0) { // 绑定套接字
+    if (bind(this->server_socket_fd, (struct sockaddr *)&sockaddr, sizeof(sockaddr)) != 0) { // 绑定套接字
         Debug::CoutError("Socket 绑定失败");
-        close(server_socket_fd);
+        close(this->server_socket_fd);
         exit(0);
     }
-    if (listen(server_socket_fd, 1) != 0) { // 监听套接字
+    if (listen(this->server_socket_fd, 1) != 0) { // 监听套接字
         Debug::CoutError("Socket 监听失败");
-        close(server_socket_fd);
+        close(this->server_socket_fd);
         exit(0);
     }
+    // acceptConnection();
+    return this->server_socket_fd;
+}
+
+void etrs::net::Client::acceptConnection(std::function<void()> onConnect) {
+    struct sockaddr_in *addr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
+    socklen_t addr_len = (socklen_t)sizeof(*addr);
+    memset(addr, 0, sizeof(*addr));
 
     Debug::CoutDebug("等待客户端连接...");
-    this->fd = accept(server_socket_fd, (struct sockaddr *)addr, &addr_len);
+    this->fd = accept(this->server_socket_fd, (struct sockaddr *)addr, &addr_len);
 
     if (this->fd < 0) {
         Debug::CoutError("Socket 接收失败");
-        close(server_socket_fd);
+        close(this->server_socket_fd);
         free(addr);
         exit(0);
     } else {
@@ -92,7 +101,7 @@ etrs::net::Client::Client(const int port, std::function<void()> onConnect) {
         if (onConnect != nullptr) {
             onConnect();
         }
-    };
+    }
 }
 
 // 发送Protobuf消息到网络对端
@@ -109,7 +118,7 @@ bool etrs::net::Client::sendMessage(google::protobuf::Message &message) {
 
     // 获取序列化后的数据并发送到网络对端
     string serialized_data = output_stream.str();
-    unique_lock<mutex> lock(mutex_);
+    unique_lock<mutex> lock(this->mutex_);
     if (write(this->fd, serialized_data.data(), serialized_data.size()) < 0) {
         Debug::CoutError("发送消息失败");
         return false;
@@ -124,13 +133,6 @@ bool etrs::net::Client::sendExitMeshMessage() {
     return sendMessage(message);
 }
 
-int etrs::net::Client::recvData(unsigned char *recv_buffer, const int recv_length) {
-    int len = -1;
-    while ((len = recv(this->fd, recv_buffer, recv_length, 0)) < 0)
-        ;
-    return len;
-}
-
 bool etrs::net::Client::recvMessage(etrs::proto::DataMessage &message) {
     unsigned char recv_buffer[1024];
     int len = recvData(recv_buffer, 1024);
@@ -140,13 +142,14 @@ bool etrs::net::Client::recvMessage(etrs::proto::DataMessage &message) {
     return true;
 }
 
-int etrs::net::Client::sendMessageFromMesh(std::shared_ptr<open3d::geometry::TriangleMesh> mesh_ptr, const int interval) {
+int etrs::net::Client::sendMessageFromMesh(std::shared_ptr<open3d::geometry::TriangleMesh> mesh_ptr,
+                                           const int interval) {
     if (mesh_ptr == nullptr) {
         Debug::CoutError("Mesh 为空");
         return -1;
     }
     etrs::proto::DataMessage data_message;
-    data_message.set_type(etrs::proto::DataMessage::MESH);            // 设置消息类型
+    data_message.set_type(etrs::proto::DataMessage::MESH); // 设置消息类型
     etrs::proto::Mesh *mesh_message = data_message.mutable_mesh();
     const vector<Eigen::Vector3d> &vertices = mesh_ptr->vertices_;    // 顶点坐标
     const vector<Eigen::Vector3i> &triangles = mesh_ptr->triangles_;  // 顶点索引
@@ -235,4 +238,77 @@ int etrs::net::Client::sendMessageFromMesh(open3d::geometry::TriangleMesh mesh, 
     Debug::CoutSection("发送完毕", "一共发送了 {} 次\n 面片数量 {} ", write_count, triangles.size());
     sendExitMeshMessage();
     return write_count;
+}
+
+etrs::net::LocalProcessCommunicator::LocalProcessCommunicator(const int port) : port(port) {}
+
+int etrs::net::LocalProcessCommunicator::createServerSocket() {
+    struct sockaddr_in sockaddr;
+    memset(&sockaddr, 0, sizeof(sockaddr));
+    sockaddr.sin_family = AF_INET;
+    sockaddr.sin_port = htons(this->port); // 端口号
+
+    char ip_local[32 + 1] = {0};
+    if (!getLocalIp(ip_local)) {
+        Debug::CoutError("连接IP失败: {}", ip_local);
+        exit(0);
+    }
+    inet_aton(ip_local, &sockaddr.sin_addr); // 将一个字符串IP地址转换为一个32位的网络序列IP地址
+
+    this->server_socket_fd = socket(AF_INET, SOCK_STREAM, 0); // 创建套接字
+
+    if (this->server_socket_fd < 0) {
+        Debug::CoutError("Socket 创建失败");
+        exit(0);
+    }
+
+    if (bind(this->server_socket_fd, (struct sockaddr *)&sockaddr, sizeof(sockaddr)) != 0) { // 绑定套接字
+        Debug::CoutError("Socket 绑定失败");
+        close(this->server_socket_fd);
+        exit(0);
+    }
+    if (listen(this->server_socket_fd, 1) != 0) { // 监听套接字
+        Debug::CoutError("Socket 监听失败");
+        close(this->server_socket_fd);
+        exit(0);
+    }
+    // acceptConnection();
+    return this->server_socket_fd;
+}
+
+void etrs::net::LocalProcessCommunicator::acceptConnection(std::function<void()> onConnect) {
+    struct sockaddr_in *addr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
+    socklen_t addr_len = (socklen_t)sizeof(*addr);
+    memset(addr, 0, sizeof(*addr));
+
+    Debug::CoutDebug("等待本地进程连接...");
+    this->fd = accept(this->server_socket_fd, (struct sockaddr *)addr, &addr_len);
+
+    if (this->fd < 0) {
+        Debug::CoutError("Socket 接收失败");
+        close(this->server_socket_fd);
+        free(addr);
+        exit(0);
+    } else {
+        Debug::CoutSuccess("本地进程连接成功");
+        if (onConnect != nullptr) {
+            onConnect();
+        }
+    }
+}
+
+bool etrs::net::LocalProcessCommunicator::sendData(const unsigned char *send_buffer, const int send_length) {
+    unique_lock<mutex> lock(this->mutex_);
+    if (write(this->fd, send_buffer, send_length) < 0) {
+        Debug::CoutError("发送消息失败");
+        return false;
+    }
+    return true;
+}
+
+int etrs::net::LocalProcessCommunicator::recvData(unsigned char *recv_buffer, const int recv_length) {
+    int len = -1;
+    while ((len = recv(this->fd, recv_buffer, recv_length, 0)) < 0)
+        ;
+    return len;
 }

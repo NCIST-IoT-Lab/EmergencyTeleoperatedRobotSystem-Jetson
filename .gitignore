@@ -16,3 +16,8 @@ build1
 /src/protobuf/*.h
 
 /src/ref
+
+/src/python/__pycache__
+/src/python/protobuf/__pycache__
+
+

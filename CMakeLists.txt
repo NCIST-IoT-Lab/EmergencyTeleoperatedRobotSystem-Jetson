@@ -49,26 +49,30 @@ add_executable(EmergencyTeleoperatedRobotSystem
         ${PROTO_HDRS} 
         )
 
-# add_executable(Recon
-#         src/Recon.cpp 
-#         src/AzureKinectExtrinsics.cpp 
-#         src/SoundSourceLocalization.cpp
-#         src/AzureKinect.cpp 
-#         src/Utility.cpp
-#         src/Bot.cpp
-#         src/Network.cpp
-#         ${PROTO_SRCS} 
-#         ${PROTO_HDRS} 
-#         )
+add_executable(Recon
+        src/Recon.cpp 
+        src/AzureKinectExtrinsics.cpp 
+        src/SoundSourceLocalization.cpp
+        src/AzureKinect.cpp 
+        src/Utility.cpp
+        src/Bot.cpp
+        src/Network.cpp
+        src/Bluetooth.cpp
+        src/Device.cpp
+        src/Serial.cpp
+        ${PROTO_SRCS} 
+        ${PROTO_HDRS} 
+        )
 
-# target_link_libraries(Recon
-#         k4a::k4a
-#         ${Open3D_LIBRARIES}
-#         ${Eigen3_LIBRARIES}
-#         ${Protobuf_LIBRARIES}
-#         asound
-#         fftw3
-#         )
+target_link_libraries(Recon
+        k4a::k4a
+        ${Open3D_LIBRARIES}
+        ${Eigen3_LIBRARIES}
+        ${Protobuf_LIBRARIES}
+        asound
+        fftw3
+        bluetooth
+        )
 
 # add_executable(Compete
 #         src/Compete.cpp 
@@ -82,19 +86,24 @@ add_executable(EmergencyTeleoperatedRobotSystem
 #         ${PROTO_HDRS} 
 #         )
 
-# add_executable(Zhaoxin
-#         src/Zhaoxin.cpp 
-#         src/Bot.cpp
-#         src/Network.cpp
-#         ${PROTO_SRCS} 
-#         ${PROTO_HDRS} 
-#         )
+add_executable(Zhaoxin
+        src/Zhaoxin.cpp 
+        src/Bot.cpp
+        src/Network.cpp
+        src/Bluetooth.cpp
+        src/Device.cpp
+        src/Serial.cpp
+        src/Utility.cpp
+        ${PROTO_SRCS} 
+        ${PROTO_HDRS} 
+        )
 
-# target_link_libraries(Zhaoxin
-#         ${Open3D_LIBRARIES}
-#         ${Eigen3_LIBRARIES}
-#         ${Protobuf_LIBRARIES}
-#         )
+target_link_libraries(Zhaoxin
+        ${Open3D_LIBRARIES}
+        ${Eigen3_LIBRARIES}
+        ${Protobuf_LIBRARIES}
+        bluetooth
+        )
 
 # target_link_libraries(Compete
 #         k4a::k4a
