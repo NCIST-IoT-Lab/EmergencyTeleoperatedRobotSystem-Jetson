@@ -44,7 +44,7 @@ void onRotated(etrs::utility::Config &config, string &FIRST_MOTOR_ROTATION) {
     }
 }
 
-int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路径
+int main(int argc, char **argv) {
     // 读取配置文件
     string config_file_path = "../default.conf";
     if (argc > 1) {
@@ -95,15 +95,16 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
     // k4a_device_t device;
 
     // etrs::bot::BotArm bot_arm_left(BOT_ARM_SERIAL_PORT_NAME, "机械臂");
+    // TODO: 将Unity端的机械臂数据的识别帧部分删除，在此处添加识别帧
     etrs::bot::BotArm bot_arm_left(LEFT_BOT_ARM_MAC_ADDRESS, "左机械臂");
-    // etrs::bot::BotArm bot_arm_right(RIGHT_BOT_ARM_MAC_ADDRESS, "右机械臂");
+    etrs::bot::BotArm bot_arm_right(RIGHT_BOT_ARM_MAC_ADDRESS, "右机械臂");
 
     etrs::bot::BotMotor bot_motor(STM32_SERIAL_PORT_NAME);
     etrs::bot::BotCar bot_car(BOT_CAR_SERIAL_PORT_NAME, (char)0x12, 0.62);
     etrs::bot::BotLed bot_led(STM32_SERIAL_PORT_NAME);
 
     // 发现已连接的设备数
-    if (etrs::kinect::checkKinectNum(1) == false) {
+    if (IS_CONNECT_KINECT && etrs::kinect::checkKinectNum(1) == false) {
         return 0;
     }
 
@@ -144,7 +145,7 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
 
     if (IS_CONNECT_ARM) {
         bot_arm_left.reset();
-        // bot_arm_right.reset();
+        bot_arm_right.reset();
         Debug::CoutSuccess("机械臂复位成功");
     }
 
@@ -210,10 +211,10 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
     });
 
     etrs::net::Client client1(SERVER_PORT, client.server_socket_fd);
-    client1.createServerSocket();
-    client1.acceptConnection([&]() {
-        Debug::CoutSuccess("Client 2 连接成功");
-    });
+    // client1.createServerSocket();
+    // client1.acceptConnection([&]() {
+    //     Debug::CoutSuccess("Client 2 连接成功");
+    // });
 
     // 定义互斥锁
     mutex client_mutex;
@@ -288,19 +289,22 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                 }
                 case (int)etrs::proto::DataMessage::BOT_ARM: {
                     Debug::CoutSuccess("收到机械臂数据");
-                    int length = data_message.bot_arm().data_buffer().length();
+                    int length = data_message.bot_arm().angles_size();
                     switch ((int)data_message.bot_arm().side()) {
                         case (int)etrs::proto::BotArm::Left: {
-                            // Debug::CoutSuccess("左机械臂");
-                            bot_arm_left.execute(data_message.bot_arm().data_buffer().data(), length);
-                            // bot_arm_left.sendCommand(etrs::bot::BotArm::CommandSet::READ_ANGLE);
+                            // Debug::CoutDebug("左机械臂");
+                            bot_arm_left.executeByAngle(data_message.bot_arm().angles().data());
+                            // bot_arm_left.sendCommand(etrs::bot::BotArm::CommandTypeSet::READ_ANGLE);
                             // int length = data_message.bot_arm().data_buffer().length();
                             break;
                         }
                         case (int)etrs::proto::BotArm::Right: {
-                            // Debug::CoutSuccess("右机械臂");
-                            // bot_arm_right.execute(data_message.bot_arm().data_buffer().data(), length);
+                            // Debug::CoutDebug("右机械臂");
+                            bot_arm_right.executeByAngle(data_message.bot_arm().angles().data());
                             break;
+                        }
+                        default: {
+                            Debug::CoutError("未知侧的机械臂");
                         }
                     }
                     break;
@@ -400,6 +404,16 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
 
     // 设备类型
     core::Device cuda_ = core::Device("cuda:0");
+
+    geometry::TriangleMesh llm;
+    io::ReadTriangleMesh("ply/sm.ply", llm);
+    Debug::CoutDebug("开始发送数据");
+    client.sendMessageFromMesh(llm, 800);
+
+    if (!IS_CONNECT_KINECT) {
+        while (true)
+            ;
+    }
 
     io::AzureKinectSensorConfig sensor_config;
     string azure_kinect_config_file = "../azure_kinect_sensor_conf.json";

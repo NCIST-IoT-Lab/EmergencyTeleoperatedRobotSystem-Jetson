@@ -1,7 +1,0 @@
-syntax = "proto3";
-package etrs.proto;
-
-message TempAndHumi{
-    float temp = 1;
-    float humi = 2;
-}

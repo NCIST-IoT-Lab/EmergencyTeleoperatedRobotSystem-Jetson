@@ -229,8 +229,8 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
                 case (int)etrs::proto::DataMessage::BOT_ARM: {
                     Debug::CoutSuccess("收到机械臂数据");
                     int length = data_message.bot_arm().data_buffer().length();
-                    bot_arm.execute(data_message.bot_arm().data_buffer().data(), length);
-                    bot_arm.sendCommand(etrs::bot::BotArm::CommandSet::READ_ANGLE);
+                    bot_arm.executeByAngle(data_message.bot_arm().angles().data());
+                    // bot_arm.sendCommand(etrs::bot::BotArm::CommandTypeSet::READ_ANGLE);
                     // for (int i = 0; i < length; i++) {
                     //     cout << "jxb:" << data_message.bot_arm().data_buffer().data() << endl;
                     // }

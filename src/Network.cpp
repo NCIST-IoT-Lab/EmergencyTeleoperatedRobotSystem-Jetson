@@ -156,19 +156,19 @@ int etrs::net::Client::sendMessageFromMesh(std::shared_ptr<open3d::geometry::Tri
     const vector<Eigen::Vector3d> &colors = mesh_ptr->vertex_colors_; // 顶点颜色
     int write_count = 0;
     for (int i = 0; i < triangles.size(); i++) {
-        etrs::proto::V1 *v1 = mesh_message->add_v1();
+        etrs::proto::Vertex *v1 = mesh_message->add_v1();
         int v1_index = triangles[i][0];
         v1->set_x(vertices[v1_index][0]);
         v1->set_y(vertices[v1_index][1]);
         v1->set_z(vertices[v1_index][2]);
 
-        etrs::proto::V2 *v2 = mesh_message->add_v2();
+        etrs::proto::Vertex *v2 = mesh_message->add_v2();
         int v2_index = triangles[i][1];
         v2->set_x(vertices[v2_index][0]);
         v2->set_y(vertices[v2_index][1]);
         v2->set_z(vertices[v2_index][2]);
 
-        etrs::proto::V3 *v3 = mesh_message->add_v3();
+        etrs::proto::Vertex *v3 = mesh_message->add_v3();
         int v3_index = triangles[i][2];
         v3->set_x(vertices[v3_index][0]);
         v3->set_y(vertices[v3_index][1]);
@@ -205,19 +205,19 @@ int etrs::net::Client::sendMessageFromMesh(open3d::geometry::TriangleMesh mesh, 
 
     int write_count = 0;
     for (int i = 0; i < triangles.size(); i++) {
-        etrs::proto::V1 *v1 = mesh_message->add_v1();
+        etrs::proto::Vertex *v1 = mesh_message->add_v1();
         int v1_index = triangles[i][0];
         v1->set_x(vertices[v1_index][0]);
         v1->set_y(vertices[v1_index][1]);
         v1->set_z(vertices[v1_index][2]);
 
-        etrs::proto::V2 *v2 = mesh_message->add_v2();
+        etrs::proto::Vertex *v2 = mesh_message->add_v2();
         int v2_index = triangles[i][1];
         v2->set_x(vertices[v2_index][0]);
         v2->set_y(vertices[v2_index][1]);
         v2->set_z(vertices[v2_index][2]);
 
-        etrs::proto::V3 *v3 = mesh_message->add_v3();
+        etrs::proto::Vertex *v3 = mesh_message->add_v3();
         int v3_index = triangles[i][2];
         v3->set_x(vertices[v3_index][0]);
         v3->set_y(vertices[v3_index][1]);

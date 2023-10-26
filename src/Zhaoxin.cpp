@@ -23,5 +23,5 @@ int main(int argc, char **argv) {
     geometry::TriangleMesh ply;
     io::ReadTriangleMesh("ply/sm.ply", ply);
     
-    lpcom.sendData((const unsigned char*)ply_str.c_str(), ply_str.length());
+    // lpcom.sendData((const unsigned char*)ply_str.c_str(), ply_str.length());
 }

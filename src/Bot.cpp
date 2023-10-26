@@ -106,28 +106,69 @@ etrs::bot::BotArm::BotArm(const string port_or_address, const string device_name
     } else { // 否则是串口地址
         this->device = new etrs::device::serial::SerialDevice(port_or_address, device_name);
     }
+    // 机械臂关节舵机默认速度 30%
+    this->arm_speed = 0x1E;
 
-    this->command_buffer[0] = 0xFE;
-    this->command_buffer[1] = 0xFE;
+    // this->command_buffer[0] = 0xFE;
+    // this->command_buffer[1] = 0xFE;
 
     this->gripper_buffer[0] = 0xFE;
     this->gripper_buffer[1] = 0xFE;
     this->gripper_buffer[2] = 0x04;
-    this->gripper_buffer[3] = CommandSet::SEND_GRIPPER_ANGLE;
+    this->gripper_buffer[3] = CommandTypeSet::SEND_GRIPPER_ANGLE;
+
     this->gripper_buffer[5] = 0x14;
     this->gripper_buffer[6] = 0xFA;
 }
 
 void BotArm::setDeviceName(const string device_name) { this->device->setDeviceName(device_name); }
 
-bool etrs::bot::BotArm::reset() {
-    char reset_buffer[18] = {0xFE, 0xFE, 0x0F, 0x22, 0x00, 0x00, 0x00, 0x00, 0x00,
-                             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1E, 0xFA};
-    return execute(reset_buffer, 18);
+void BotArm::setArmSpeed(const char arm_speed) { this->arm_speed = arm_speed; }
+
+char BotArm::getArmSpeed() { return this->arm_speed; }
+
+int BotArm::anglesToCommand(const int *angles, char *command) {
+    if (angles == nullptr || command == nullptr) {
+        Debug::CoutError("机械臂角度指令转换失败！角度指针或指令指针为空！");
+        return 0;
+    }
+    // 指令例子： 0xFE, 0xFE, 0x0F, 0x22, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1E,
+    int cmd_len = initCommand(CommandTypeSet::SEND_ALL_ANGLE, command);
+    for (int i = 0; i < 6; i++) {
+        int angle = angles[i] * 100;
+        if (angle < 0) {
+            angle = angle + 65536;
+        }
+        command[4 + 2 * i] = (angle >> 8) & 0xFF; // 角度高位
+        command[5 + 2 * i] = angle & 0xFF;        // 角度低位
+    }
+    command[16] = angles[6];
+
+    // 返回指令长度
+    return cmd_len;
 }
 
-bool etrs::bot::BotArm::execute(const char *data_buffer, const int data_length) {
+int BotArm::coordToCommand(const float *coord, char *command) {
+    // TODO: 末端坐标模式
+    return 0;
+}
+
+bool BotArm::reset() {
+    // char reset_buffer[18] = {0xFE, 0xFE, 0x0F, 0x22, 0x00, 0x00, 0x00, 0x00, 0x00,
+    //                          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1E, 0xFA};
+    int reset_angles[7] = {0, 0, 0, 0, 0, 0, 30};
+    return executeByAngle(reset_angles);
+}
+
+bool BotArm::executeByAngle(const int *angles) {
+    char data_buffer[20];
+    int data_length = anglesToCommand(angles, data_buffer);
     return this->device->sendData(data_buffer, data_length) > 0;
+}
+
+bool BotArm::executeByCoord(const float *coord) {
+    // TODO: 末端坐标模式
+    return false;
 }
 
 // int etrs::bot::BotArm::recvData(unsigned char *recv_buffer, const int recv_length) {
@@ -159,64 +200,67 @@ bool etrs::bot::BotArm::execute(const char *data_buffer, const int data_length) 
 //     return len;
 // }
 
-int etrs::bot::BotArm::recvData(char *recv_buffer, const int recv_length) {
+int BotArm::recvData(char *recv_buffer, const int recv_length) {
     return this->device->recvData(recv_buffer, recv_length);
 }
 
-int getCommand(etrs::bot::BotArm::CommandSet command_type, char *&command) {
-    int cmd_len = 1;
+int BotArm::initCommand(BotArm::CommandTypeSet command_type, char *&command) {
+    int data_len;
     switch (command_type) {
-        case etrs::bot::BotArm::CommandSet::READ_ANGLE: {
-            cmd_len = 2;
-            command = new char[cmd_len];
-            command[0] = cmd_len;
-            command[1] = etrs::bot::BotArm::CommandSet::READ_ANGLE;
+        case BotArm::CommandTypeSet::READ_ANGLE: {
+            data_len = 2;
             break;
         }
-        case etrs::bot::BotArm::CommandSet::READ_COORD: {
-            cmd_len = 2;
-            command = new char[cmd_len];
-            command[0] = cmd_len;
-            command[1] = etrs::bot::BotArm::CommandSet::READ_COORD;
+        case BotArm::CommandTypeSet::READ_COORD: {
+            data_len = 2;
             break;
         }
-        case etrs::bot::BotArm::CommandSet::FREE_MODE: {
-            cmd_len = 2;
-            command = new char[cmd_len];
-            command[0] = cmd_len;
-            command[1] = etrs::bot::BotArm::CommandSet::FREE_MODE;
+        case BotArm::CommandTypeSet::FREE_MODE: {
+            data_len = 2;
+            break;
+        }
+        case BotArm::CommandTypeSet::SEND_ALL_ANGLE: {
+            data_len = 15;
             break;
         }
         default:
-            Debug::CoutError("未定义的命令类型！");
-            command = new char[1];
-            command[0] = 0x01;
+            Debug::CoutError("未定义的机械臂指令类型！");
+            // command = new char[1];
+            // command[0] = 0x01;
+            return 0;
     }
-    return cmd_len;
+    command = new char[data_len + 3]; // 指令长度 = 数据帧长度 + 2个识别帧 + 1个结束帧
+    command[0] = 0xFE;                // 识别帧
+    command[1] = 0xFE;                // 识别帧
+    command[2] = (char)data_len;      // 数据帧长度
+    command[3] = command_type;        // 指令帧
+    command[data_len + 2] = 0xFA;     // 结束帧
+    return data_len + 3;
 }
 
-bool etrs::bot::BotArm::sendCommand(etrs::bot::BotArm::CommandSet command_type) {
-    char *command;
-    int command_length = getCommand(command_type, command);
-    memcpy(this->command_buffer + 2, command, command_length);
-    this->command_buffer[command_length + 2] = 0xFA;
+bool etrs::bot::BotArm::sendCommand(etrs::bot::BotArm::CommandTypeSet command_type) {
+    // char *command;
+    // int cmd_len = initCommand(command_type, command);
+    // memcpy(this->command_buffer + 2, command, command_length);
+    // this->command_buffer[command_length + 2] = 0xFA; // 结束帧
 
-    // 计算方法：角度值低位 + 角度高位值乘以256 先判断是否大于33000 如果大于33000就再减去65536 最后除以100
-    // 如果小于33000就直接除以100
-    //  0x01 0x20 0xFA
-    return execute(this->command_buffer, command_length + 3);
+    // // 计算方法：角度值低位 + 角度高位值乘以256 先判断是否大于33000 如果大于33000就再减去65536 最后除以100
+    // // 如果小于33000就直接除以100
+    // //  0x01 0x20 0xFA
+    // return this->device->sendData(this->command_buffer, cmd_len + 3);
+    return false;
 }
 
 bool etrs::bot::BotArm::openGripper(const char speed) {
     this->gripper_buffer[4] = 0x64;
     this->gripper_buffer[5] = speed;
-    return execute(this->gripper_buffer, 7);
+    return this->device->sendData(this->gripper_buffer, 7);
 }
 
 bool etrs::bot::BotArm::closeGripper(const char speed) {
     this->gripper_buffer[4] = 0x00;
     this->gripper_buffer[5] = speed;
-    return execute(this->gripper_buffer, 7);
+    return this->device->sendData(this->gripper_buffer, 7);
 }
 
 etrs::bot::STM32::STM32(string serial_port_name) {
@@ -263,7 +307,7 @@ int etrs::bot::STM32::recvData(unsigned char *recv_buffer, const int recv_length
 
 etrs::bot::BotMotor::BotMotor(string serial_port_name = DEFAULT_SERIAL_PORT_NAME) : STM32(serial_port_name) {
     this->buffer[0] = 0xFF; // 包头
-    this->buffer[1] = etrs::bot::BotMotor::CommandSet::MOTOR;
+    this->buffer[1] = etrs::bot::BotMotor::CommandTypeSet::MOTOR;
     this->buffer[2] = 0x00; // 方向
     this->buffer[3] = 0x00; // 角度高位
     this->buffer[4] = 0x00; // 角度低位
@@ -583,7 +627,7 @@ bool etrs::bot::BotCar::executeMoveSequence(float *seq, int seq_length) {
 
 etrs::bot::BotLed::BotLed(string serial_port_name) {
     this->buffer[0] = 0xFF;
-    this->buffer[1] = etrs::bot::BotLed::CommandSet::LED;
+    this->buffer[1] = etrs::bot::BotLed::CommandTypeSet::LED;
     this->buffer[2] = 0x00; // 颜色
     this->buffer[3] = 0x00; // r
     this->buffer[4] = 0x00; // g

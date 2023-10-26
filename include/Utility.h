@@ -5,8 +5,6 @@
 #ifndef _UTILITY_H_
 #define _UTILITY_H_
 
-#include <Eigen/Core>
-#include <Eigen/Dense>
 #include <cmath>
 #include <cstdarg>
 #include <fmt/format.h>
@@ -14,10 +12,16 @@
 #include <iostream>
 #include <map>
 #include <mutex>
-#include <open3d/Open3D.h>
 #include <regex>
 #include <sstream>
+#include <chrono>
+#include <iomanip>
 #include <string>
+
+#include <Eigen/Core>
+#include <Eigen/Dense>
+
+#include <open3d/Open3D.h>
 
 using namespace std;
 using namespace open3d;
@@ -114,6 +118,14 @@ namespace etrs::utility {
     class MacAddress {
     public:
         static bool isValidMacAddress(const string &mac_address);
+    };
+
+    class Time {
+        // 获取当前时间戳
+    public:
+        static int64_t getCurrentTimeStamp();
+        // 获取当前时间
+        static string getCurrentTime(string fmt = "%y-%m-%d_%H-%M-%S");
     };
 
 } // namespace etrs::utility

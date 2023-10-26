@@ -24,7 +24,7 @@ include_directories("/usr/include/eigen3")
 find_package(Protobuf REQUIRED)
 include_directories(${Protobuf_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
-file(GLOB PROTO_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/protobuf/*.proto)
+file(GLOB PROTO_FILES ${CMAKE_CURRENT_SOURCE_DIR}/protobuf/*.proto)
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_FILES})
 
 # OPEN3D
@@ -33,6 +33,8 @@ include_directories("/usr/local/include/open3d")
 
 # JSON
 find_package(jsoncpp REQUIRED)
+
+SET(EXECUTABLE_OUTPUT_PATH ../../../ETRS/bin)
 
 add_executable(EmergencyTeleoperatedRobotSystem
         src/EmergencyTeleoperatedRobotSystem.cpp 
@@ -86,24 +88,29 @@ target_link_libraries(Recon
 #         ${PROTO_HDRS} 
 #         )
 
-add_executable(Zhaoxin
-        src/Zhaoxin.cpp 
+add_executable(Reconstruction
+        src/Reconstruction.cpp 
+        src/AzureKinectExtrinsics.cpp 
+        src/AzureKinect.cpp 
+        src/Utility.cpp
         src/Bot.cpp
         src/Network.cpp
         src/Bluetooth.cpp
         src/Device.cpp
         src/Serial.cpp
-        src/Utility.cpp
         ${PROTO_SRCS} 
         ${PROTO_HDRS} 
         )
 
-target_link_libraries(Zhaoxin
+target_link_libraries(Reconstruction
+        k4a::k4a
         ${Open3D_LIBRARIES}
         ${Eigen3_LIBRARIES}
         ${Protobuf_LIBRARIES}
+        asound
         bluetooth
         )
+
 
 # target_link_libraries(Compete
 #         k4a::k4a

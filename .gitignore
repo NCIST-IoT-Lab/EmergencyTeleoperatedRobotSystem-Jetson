@@ -13,14 +13,17 @@ build1
 /src/*.ply
 /src/*.pcd
 
-/src/protobuf/*.cc
-/src/protobuf/*.cs
-/src/protobuf/*.h
+/protobuf/*.cc
+/protobuf/csharp/
+/protobuf/*.h
 
 /src/ref
 
 /src/python/__pycache__
 /src/python/logs
 /src/python/protobuf/__pycache__
+/src/python/*.ply
+
+/src/python/test
 
 

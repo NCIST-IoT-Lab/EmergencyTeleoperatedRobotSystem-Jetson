@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0c\x42otArm.proto\x12\netrs.proto\"\xab\x01\n\x06\x42otArm\x12%\n\x04side\x18\x01 \x01(\x0e\x32\x17.etrs.proto.BotArm.Side\x12%\n\x04mode\x18\x02 \x01(\x0e\x32\x17.etrs.proto.BotArm.Mode\x12\x13\n\x0b\x64\x61ta_buffer\x18\x03 \x01(\x0c\"!\n\x04Mode\x12\t\n\x05\x41ngle\x10\x00\x12\x0e\n\nCOORDINATE\x10\x01\"\x1b\n\x04Side\x12\x08\n\x04Left\x10\x00\x12\t\n\x05Right\x10\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0c\x42otArm.proto\x12\netrs.proto\"\xa6\x01\n\x06\x42otArm\x12%\n\x04side\x18\x01 \x01(\x0e\x32\x17.etrs.proto.BotArm.Side\x12%\n\x04mode\x18\x02 \x01(\x0e\x32\x17.etrs.proto.BotArm.Mode\x12\x0e\n\x06\x61ngles\x18\x03 \x03(\x05\"!\n\x04Mode\x12\t\n\x05\x41ngle\x10\x00\x12\x0e\n\nCOORDINATE\x10\x01\"\x1b\n\x04Side\x12\x08\n\x04Left\x10\x00\x12\t\n\x05Right\x10\x01\x62\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'BotArm_pb2', globals())
@@ -21,9 +21,9 @@ if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
   _BOTARM._serialized_start=29
-  _BOTARM._serialized_end=200
-  _BOTARM_MODE._serialized_start=138
-  _BOTARM_MODE._serialized_end=171
-  _BOTARM_SIDE._serialized_start=173
-  _BOTARM_SIDE._serialized_end=200
+  _BOTARM._serialized_end=195
+  _BOTARM_MODE._serialized_start=133
+  _BOTARM_MODE._serialized_end=166
+  _BOTARM_SIDE._serialized_start=168
+  _BOTARM_SIDE._serialized_end=195
 # @@protoc_insertion_point(module_scope)

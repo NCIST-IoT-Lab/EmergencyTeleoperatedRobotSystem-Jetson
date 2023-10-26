@@ -1,0 +1,16 @@
+syntax = "proto3";
+package etrs.proto;
+
+message BotArm{
+    enum Mode{
+        Angle = 0;
+        COORDINATE = 1;
+    }
+    enum Side{
+        Left = 0;
+        Right = 1;
+    }
+    Side side = 1;
+    Mode mode = 2;
+    repeated int32 angles = 3;
+}

@@ -1,7 +1,0 @@
-syntax = "proto3";
-package etrs.proto;
-
-// 舵机
-message BotMotor{
-    int32 angle = 1;
-}

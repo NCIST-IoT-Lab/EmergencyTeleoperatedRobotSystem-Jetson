@@ -1,0 +1,17 @@
+syntax = "proto3";
+package etrs.proto;
+
+message Mesh {
+    repeated Vertex v1 = 1;
+    repeated Vertex v2 = 2;
+    repeated Vertex v3 = 3;
+    repeated float r = 4;
+    repeated float g = 5;
+    repeated float b = 6;
+}
+
+message Vertex {
+    float x = 1;
+    float y = 2;
+    float z = 3;
+}

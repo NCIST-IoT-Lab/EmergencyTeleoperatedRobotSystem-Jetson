@@ -44,50 +44,21 @@ typedef unsigned char ComuType;
 #define WHEEL_DISTANCE 53
 
 namespace etrs::bot {
-    // class BotArm {
-    // private:
-    //     int fd;
-    //     char command_buffer[20];
-    //     char gripper_buffer[7];
-    //     bool is_bluetooth;
-
-    // public:
-    //     enum CommandSet {
-    //         READ_ANGLE = 0x20,
-    //         READ_COORD = 0x23,
-    //         FREE_MODE = 0x1A,
-    //         SEND_ANGLE = 0x22,
-    //         SEND_COORD = 0x25,
-    //         TOGGLE_GRIPPER = 0x66,
-    //         SEND_GRIPPER_ANGLE = 0x67,
-    //     };
-    //     enum DataSet {
-    //         ALL_ANGLE = 0x20,
-    //         ALL_COORD = 0x23,
-    //     };
-    //     BotArm(string serial_port_name); // TODO: serial_port_name 改名
-    //     bool reset();
-    //     bool execute(const char *data_buffer, int length);
-    //     bool openGripper(const char speed);
-    //     bool closeGripper(const char speed);
-    //     int recvData(unsigned char *recv_buffer, const int recv_length);
-    //     bool sendCommand(CommandSet command_type);
-    // };
-
     class BotArm {
     private:
         Device *device;
         string port_or_address;
-        char command_buffer[20];
+        // char command_buffer[20];
         char gripper_buffer[7];
         bool is_bluetooth;
+        char arm_speed;
 
     public:
-        enum CommandSet {
+        enum CommandTypeSet {
             READ_ANGLE = 0x20,
             READ_COORD = 0x23,
             FREE_MODE = 0x1A,
-            SEND_ANGLE = 0x22,
+            SEND_ALL_ANGLE = 0x22,
             SEND_COORD = 0x25,
             TOGGLE_GRIPPER = 0x66,
             SEND_GRIPPER_ANGLE = 0x67,
@@ -100,12 +71,34 @@ namespace etrs::bot {
     public:
         explicit BotArm(const string port_or_address, const string device_name = "###");
         void setDeviceName(const string device_name);
+        // 设置机械臂速度
+        void setArmSpeed(const char arm_speed);
+        // 读取机械臂速度
+        char getArmSpeed();
+        // 重置机械臂
         bool reset();
-        bool execute(const char *data_buffer, const int data_length);
+        // 使用角度值执行指令
+        bool executeByAngle(const int *angles);
+        // 使用坐标值执行指令
+        bool executeByCoord(const float *coord);
+        // 打开夹爪
         bool openGripper(const char speed);
+        // 关闭夹爪
         bool closeGripper(const char speed);
+        // 读取数据
         int recvData(char *recv_buffer, const int recv_length);
-        bool sendCommand(CommandSet command_type);
+        // 读取全部角度
+        // void readAllAngle(char *recv_buffer); 
+
+        // 发送指令
+        bool sendCommand(CommandTypeSet command_type);
+    
+    private:
+        int initCommand(CommandTypeSet command_type, char *&command);
+        // 转换舵机角度为指令
+        int anglesToCommand(const int *angles, char *command);
+        // 转换末端坐标值为指令
+        int coordToCommand(const float *coord, char *command);
     };
 
     class STM32 {
@@ -113,7 +106,7 @@ namespace etrs::bot {
         int fd;
 
     public:
-        enum CommandSet {
+        enum CommandTypeSet {
             MOTOR = 0x01,
             LED = 0x02,
         };
