@@ -11,3 +11,5 @@
 # Open3D-ML
 - CUDA 11.4
 - Pytorch 1.13
+
+# MMDetection3D

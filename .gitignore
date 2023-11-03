@@ -23,6 +23,7 @@ build1
 /src/python/logs
 /src/python/protobuf/__pycache__
 /src/python/*.ply
+/src/python/train_log
 
 /src/python/test
 
