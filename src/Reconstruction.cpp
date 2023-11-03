@@ -130,6 +130,8 @@ int main(int argc, char **argv) {
     // k4a::transformation k4a_transformation = k4a::transformation(k4a_calibration);
     // k4a_transformation_t k4a_transformation = k4a_transformation_create(&k4a_calibration);
 
+    int angle = 360;
+
     bool scan_flag = false;
     char ch;
     thread control_thread([&]() {
@@ -159,6 +161,11 @@ int main(int argc, char **argv) {
             } else if (ch == 'O') {
                 Debug::CoutInfo("开始扫描环境");
                 scan_flag = true;
+            } else if (ch == 'm') {
+                Debug::CoutInfo("请输入环境扫描角度：");
+                cin >> angle;
+                Debug::CoutSuccess("设置成功！环境扫描角度为：{}", angle);
+                Debug::CoutInfo("输入“O”开始扫描环境...");
             } else {
                 std::cout << "未知操作" << std::endl;
             }
@@ -179,14 +186,22 @@ int main(int argc, char **argv) {
             // 等待接受到stm32的数据
             bot_motor.recvData(stm32_buffer, 32);
             char data_type = stm32_buffer[0];
-            this_thread::sleep_for(chrono::microseconds(100));
+            // this_thread::sleep_for(chrono::microseconds(500));
+            // 转string
+            // string stm32_data = "";
+            // for (int i = 0; i < 32; ++i) {
+            //     stm32_data += stm32_buffer[i];
+            // }
+            // Debug::CoutDebug("stm32_data: {}", stm32_data);
 
             // 解析stm32数据
             switch (data_type) {
                 case 'M':
                 case 'm': {
-                    if (stm32_buffer[4] == 'D' && stm32_buffer[5] == 'O' && stm32_buffer[6] == 'N' &&
-                        stm32_buffer[7] == 'E') {
+                    if ((stm32_buffer[4] == 'd' || stm32_buffer[4] == 'D') &&
+                        (stm32_buffer[5] == 'o' || stm32_buffer[5] == 'O') &&
+                        (stm32_buffer[6] == 'n' || stm32_buffer[6] == 'N') &&
+                        (stm32_buffer[7] == 'e' || stm32_buffer[7] == 'E')) {
                         Debug::CoutDebug("步进电机旋转完毕！");
                         ++flag_recording;
                     }
@@ -221,7 +236,6 @@ int main(int argc, char **argv) {
     io::ReadIJsonConvertibleFromJSON(azure_kinect_config_file, sensor_config);
     io::AzureKinectSensor sensor(sensor_config);
 
-    int angle = 360;
     int angle_temp;
     char c;
     while (true) {

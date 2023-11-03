@@ -537,7 +537,7 @@ int main(int argc, char **argv) {
                         core::Tensor rotate_tensor = open3d::core::eigen_converter::EigenMatrixToTensor(
                             Eigen::AngleAxisd(-(angle / 2) / 180.0 * M_PI, Eigen::Vector3d(0, 1, 0))
                                 .toRotationMatrix());
-                        core::Tensor center_tensor =
+                        s core::Tensor center_tensor =
                             core::Tensor::Zeros({3}, core::Dtype::Float64, core::Device("CPU:0"));
                         auto mesh = model.ExtractTriangleMesh().Rotate(rotate_tensor, center_tensor);
                         // 点云数据
