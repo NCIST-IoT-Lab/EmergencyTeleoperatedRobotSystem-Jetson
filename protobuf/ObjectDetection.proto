@@ -1,0 +1,26 @@
+syntax = "proto3";
+package etrs.proto;
+
+// ObjectDetection
+message ObjectDetection {
+    repeated Object objects = 1;
+}
+
+message Object {
+    int32 label = 1;
+    BoundingBox bbox = 2;
+    float score = 3;
+}
+
+message BoundingBox {
+    // 坐标
+    float x = 1;
+    float y = 2;
+    float z = 3;
+    // 长宽高
+    float width = 4;
+    float height = 5;
+    float length = 6;
+    // 旋转角度
+    float yaw = 7;
+}
