@@ -360,8 +360,10 @@ int main(int argc, char **argv) {
             switch (data_type) {
                 case 'M':
                 case 'm': {
-                    if (stm32_buffer[4] == 'D' && stm32_buffer[5] == 'O' && stm32_buffer[6] == 'N' &&
-                        stm32_buffer[7] == 'E') {
+                    if ((stm32_buffer[4] == 'd' || stm32_buffer[4] == 'D') &&
+                        (stm32_buffer[5] == 'o' || stm32_buffer[5] == 'O') &&
+                        (stm32_buffer[6] == 'n' || stm32_buffer[6] == 'N') &&
+                        (stm32_buffer[7] == 'e' || stm32_buffer[7] == 'E')) {
                         Debug::CoutDebug("舵机旋转完成");
                         ++flag_recording;
                     }
@@ -406,7 +408,7 @@ int main(int argc, char **argv) {
     core::Device cuda_ = core::Device("cuda:0");
 
     geometry::TriangleMesh llm;
-    io::ReadTriangleMesh("ply/sm.ply", llm);
+    // io::ReadTriangleMesh("ply/sm.ply", llm);
     Debug::CoutDebug("开始发送数据");
     client.sendMessageFromMesh(llm, 800);
 
@@ -537,7 +539,7 @@ int main(int argc, char **argv) {
                         core::Tensor rotate_tensor = open3d::core::eigen_converter::EigenMatrixToTensor(
                             Eigen::AngleAxisd(-(angle / 2) / 180.0 * M_PI, Eigen::Vector3d(0, 1, 0))
                                 .toRotationMatrix());
-                        s core::Tensor center_tensor =
+                        core::Tensor center_tensor =
                             core::Tensor::Zeros({3}, core::Dtype::Float64, core::Device("CPU:0"));
                         auto mesh = model.ExtractTriangleMesh().Rotate(rotate_tensor, center_tensor);
                         // 点云数据
@@ -559,7 +561,7 @@ int main(int argc, char **argv) {
 
                     Debug::CoutDebug("开始发送数据");
                     client.sendMessageFromMesh(legacy_mesh1, 800);
-                    client1.sendMessageFromMesh(legacy_mesh1, 800);
+                    // client1.sendMessageFromMesh(legacy_mesh1, 800);
                 }
                 break;
             }

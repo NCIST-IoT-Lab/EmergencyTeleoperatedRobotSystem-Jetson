@@ -19,12 +19,12 @@ build1
 
 /src/ref
 
-/src/python/__pycache__
-/src/python/logs
-/src/python/protobuf/__pycache__
-/src/python/*.ply
-/src/python/train_log
-
-/src/python/test
+/src/object_detection/__pycache__
+/src/object_detection/logs
+/src/object_detection/protobuf/__pycache__
+/src/object_detection/*.ply
+/src/object_detection/train_log
+           
+/src/object_detection/test
 
 /test_point_clouds

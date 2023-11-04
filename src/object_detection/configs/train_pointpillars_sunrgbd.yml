@@ -1,0 +1,41 @@
+dataset:
+  name: S3DIS
+  dataset_path: # path/to/your/dataset
+  cache_dir: ./logs/cache
+  class_weights: [3370714, 2856755, 4919229, 318158, 375640, 
+478001, 974733, 650464, 791496, 88727, 1284130, 229758, 2272837]
+  ignored_label_inds: []
+  num_points: 40960
+  test_area_idx: 5
+  test_result_folder: ./test
+  use_cache: False
+model:
+  name: PointPillars
+  batcher: ConcatBatcher
+  ckpt_path: # path/to/your/checkpoint
+  in_channels: 6
+  blocks: [2, 3, 4, 6, 3]
+  num_classes: 13
+  # voxel_size: 0.04
+  max_voxels: 50000
+  ignored_label_inds: [-1]
+
+  voxelize:
+    max_num_points: 32
+    voxel_size: &vsize
+      [0.16, 0.16, 4]
+    max_voxels: [16000, 40000]
+
+  voxel_encoder:
+    in_channels: 4
+    feat_channels: [64]
+    voxel_size: *vsize
+
+  augment: {}
+
+pipeline:
+  name: ObjectDetection
+  batch_size: 6
+  optimizer:
+    lr: 0.001
+  train_sum_dir: train_log
