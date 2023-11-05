@@ -1,0 +1,13 @@
+syntax = "proto3";
+package etrs.proto;
+
+// 无颜色点云
+message PointCloud {
+    repeated Point points = 1;
+}
+
+message Point{
+    float x = 1;
+    float y = 2;
+    float z = 3;
+}
