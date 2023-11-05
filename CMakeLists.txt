@@ -41,7 +41,7 @@ add_executable(EmergencyTeleoperatedRobotSystem
         src/AzureKinectExtrinsics.cpp 
         src/SoundSourceLocalization.cpp
         src/AzureKinect.cpp 
-        src/Utility.cpp
+        src/utility/Utility.cpp
         src/Bot.cpp
         src/Network.cpp
         src/Bluetooth.cpp
@@ -56,7 +56,7 @@ add_executable(Recon
         src/AzureKinectExtrinsics.cpp 
         src/SoundSourceLocalization.cpp
         src/AzureKinect.cpp 
-        src/Utility.cpp
+        src/utility/Utility.cpp
         src/Bot.cpp
         src/Network.cpp
         src/Bluetooth.cpp
@@ -92,7 +92,7 @@ add_executable(Reconstruction
         src/Reconstruction.cpp 
         src/AzureKinectExtrinsics.cpp 
         src/AzureKinect.cpp 
-        src/Utility.cpp
+        src/utility/Utility.cpp
         src/Bot.cpp
         src/Network.cpp
         src/Bluetooth.cpp
@@ -143,6 +143,7 @@ target_link_libraries(Reconstruction
 
 # 指定头文件目录
 include_directories(include)
+include_directories(include/utility)
 
 target_link_libraries(EmergencyTeleoperatedRobotSystem
         k4a::k4a
