@@ -7,7 +7,7 @@ message ObjectDetection {
 }
 
 message Object {
-    int32 label = 1;
+    string label = 1;
     BoundingBox bbox = 2;
     float score = 3;
 }

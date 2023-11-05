@@ -11,6 +11,7 @@ import "BotArm.proto";
 import "BotLed.proto";
 import "KinectMode.proto";
 import "ObjectDetection.proto";
+import "PointCloud.proto";
 
 message DataMessage {
     enum Type {
@@ -26,6 +27,7 @@ message DataMessage {
         TEMP_AND_HUMI = 8;
         KINECT_MODE = 9;
         OBJECT_DETECTION = 10;
+        POINT_CLOUD = 11;
     }
     Type type = 1;
     oneof data {
@@ -39,5 +41,6 @@ message DataMessage {
         TempAndHumi temp_and_humi = 9;
         KinectMode kinect_mode = 10;
         ObjectDetection object_detection= 11;
+        PointCloud point_cloud= 12;
     }
 }
