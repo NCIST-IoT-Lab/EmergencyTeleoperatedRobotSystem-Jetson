@@ -136,7 +136,7 @@ int main(int argc, char **argv) { // TODO: 可以传参，传入配置文件路�
     }
 
     // 创建服务器等待连接
-    etrs::net::Client client(SERVER_PORT, [&]() {
+    etrs::net::HoloCommunicator client(SERVER_PORT, [&]() {
         // LED亮绿
         bot_led.setLedColor(etrs::bot::BotLed::LedColor::GREEN);
     });

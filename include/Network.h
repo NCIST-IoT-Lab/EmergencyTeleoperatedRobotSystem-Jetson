@@ -1,11 +1,13 @@
+
 #ifndef _NETWORK_H_
 #define _NETWORK_H_
 
+#include "Utility.h"
 #include "DataMessage.pb.h"
-#include <Utility.h>
+
+#include <iostream>
 #include <arpa/inet.h>
 #include <fcntl.h>
-#include <iostream>
 #include <net/if.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h> //TCP_NODELAY
@@ -22,71 +24,57 @@ namespace etrs::net {
 
     // int creatServerSocket(int port);
 
-    namespace proto {
-        bool send_message(int fd, google::protobuf::Message &message);
-        bool send_exit_mesh_message(int fd);
-    } // namespace proto
-
-    // class Client {
-    // private:
-    //     int port;
-    //     int fd;
-    //     mutex mutex_;
-
-    // public:
-    //     int server_socket_fd;
-
-    // public:
-    //     // 反馈函数
-    //     explicit Client(const int port, std::function<void()> onConnect = nullptr);
-    //     explicit Client(const int port, int server_socket_fd, std::function<void()> onConnect = nullptr);
-    //     bool sendMessage(google::protobuf::Message &message);
-    //     int recvData(unsigned char *recv_buffer, const int recv_length);
-    //     bool recvMessage(etrs::proto::DataMessage &message);
-    //     bool sendExitMeshMessage();
-    //     int sendMessageFromMesh(std::shared_ptr<open3d::geometry::TriangleMesh> mesh_ptr, const int interval);
-    //     int sendMessageFromMesh(open3d::geometry::TriangleMesh mesh, const int interval);
-    // };
-
-    // class LocalProcessCommunicator : public Client {
-    // private:
-    //     int port;
-
-    // public:
-    //     explicit LocalProcessCommunicator(const int port, std::function<void()> onConnect = nullptr);
-    // };
-
-    class LocalProcessCommunicator {
+    //TODO: 代码感觉还需要重构优化，可以分为两个基类，一个是基于TCP的通信，一个是基于Protobuf的通信。派生类多继承于这两个类
+    class BaseCommunicator {    //基于 TCP 的通信
     protected:
         int port;
         int fd = -1;
         mutex mutex_;
         
     public: 
+        DebugMessages debug_messages;
         int server_socket_fd;
 
     public:
-        explicit LocalProcessCommunicator(const int port);
-        virtual int createServerSocket();
-        virtual void acceptConnection(std::function<void()> onConnect = nullptr);
+        explicit BaseCommunicator(const int port);
+        int createServerSocket();
+        void acceptConnection(std::function<void()> onConnect = nullptr);
         bool sendData(const unsigned char *send_buffer, const int send_length);
         int recvData(unsigned char *recv_buffer, const int recv_length);
+
+        // TODO: 是否能剥离出来
+        bool sendMessage(google::protobuf::Message &message);
+        bool recvMessage(etrs::proto::DataMessage &message);
 
     private:
         // bool hasCreateSocket(); //检查是否未创建socket
     };
+    
 
-    class Client : public LocalProcessCommunicator {
+    class PythonCommunicator : public BaseCommunicator {
     private:
 
     public:
-        explicit Client(const int port);
-        explicit Client(const int port, int server_socket_fd);
-        int createServerSocket() override;
-        void acceptConnection(std::function<void()> onConnect = nullptr) override;
-        bool sendMessage(google::protobuf::Message &message);
-        bool recvMessage(etrs::proto::DataMessage &message);
+        explicit PythonCommunicator(const int port);
+        int sendMessageFromMesh(open3d::geometry::TriangleMesh mesh, const int interval);
+        // int sendMessageFromMesh(std::shared_ptr<open3d::geometry::TriangleMesh> mesh_ptr, const int interval);
+    
+    private:
+    };
+
+
+    class HoloCommunicator : public BaseCommunicator {
+    private:
+
+    public:
+        explicit HoloCommunicator(const int port);
+        explicit HoloCommunicator(const int port, int server_socket_fd);
+        // int createServerSocket() override;
+        // void acceptConnection(std::function<void()> onConnect = nullptr) override;
+        // bool sendMessage(google::protobuf::Message &message);
+        // bool recvMessage(etrs::proto::DataMessage &message);
         bool sendExitMeshMessage();
+        // TODO: 两个函数的函数体可以合并
         int sendMessageFromMesh(std::shared_ptr<open3d::geometry::TriangleMesh> mesh_ptr, const int interval);
         int sendMessageFromMesh(open3d::geometry::TriangleMesh mesh, const int interval);
     };

@@ -46,9 +46,12 @@ namespace etrs::device::bt {
         void setHandle(const char *handle);
         void setOpCodeAndHandle(const char *op_code, const char *handle); // TODO: 名字太长
 
-        int sendData(const char *data_buffer, const int data_length) override; // 基于 l2cap 协议
+        int sendData(const char *data_buffer, const int data_length); // 基于 l2cap 协议
+
         int sendData(const char *op_code, const char *handle, const char *data_buffer, const int data_length);
+
         int recvData(char *recv_buffer, const int recv_length) override;
+
         int modifyMtu(const int mtu);
 
     private:

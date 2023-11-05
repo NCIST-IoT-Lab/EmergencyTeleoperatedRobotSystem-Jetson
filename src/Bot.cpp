@@ -25,77 +25,74 @@ void rightArmAutoRealy(unsigned char *databuff) {
 }
 
 // 串口发送  ComuType为类型  databuff中存储数据
-int serialTX(int fd, ComuType comutype, unsigned char databuff[]) {
-    int ret = 0, i;
-    unsigned char writebuff[32] = {0};
-
-    writebuff[0] = writebuff[1] = FLAG_START;
-    switch (comutype) {
-            // 设置指令帧
-        case FREEMODE:
-            // 自由模式
-            writebuff[2] = 0x02; // 数据长度帧
-            writebuff[3] = comutype;
-            break;
-        case READANGLE:
-            // 读取所有机械臂舵机角度
-            writebuff[2] = 0x02;
-            writebuff[3] = comutype;
-            break;
-        case POST_ALL_ANGLE:
-            // 发送全部角度
-            writebuff[2] = 0x0f;
-            writebuff[3] = comutype;
-            rightArmAutoRealy(databuff); // 右臂角度自适应
-            memcpy(writebuff + 4, databuff, 13);
-            break;
-        case READ_GRIPPER_ANGLE:
-            // 读取夹爪角度
-            writebuff[2] = 0x02; // 数据长度帧，按照机械臂的协议来
-            writebuff[3] = comutype;
-            break;
-        case SET_GRIPPER_MODE:
-            // 设置夹爪模式与设置夹爪角度相同
-        case SET_GRIPPER_ANGLE:
-            // 设置夹爪角度
-            writebuff[2] = 0x04; // 数据长度帧
-            writebuff[3] = comutype;
-            memcpy(writebuff + 4, databuff, 2);
-            break;
-            // 读取当前位置坐标
-        case READ_ALL_COORD:
-            writebuff[2] = 0x02;
-            writebuff[3] = comutype;
-            break;
-            // 设置位置坐标
-        case SET_ALL_COORD:
-            writebuff[2] = 0x10;
-            writebuff[3] = comutype;
-            memcpy(writebuff + 4, databuff, 14);
-            break;
-        default:
-            Debug::CoutError("发送类型未定义！");
-            return -1;
-    }
-    writebuff[2 + writebuff[2]] = FLAG_END; // 根据协议中的数据长度帧填充结束帧
-    // 打印writebuff
-    //  for (i = 0; i < (writebuff[2] + 3); i++) {
-    //      printf("%02X ", writebuff[i]);
-    //  }
-
-    write(fd, writebuff, (int)(writebuff[2] + 3));
-
-    // if (writebuff[3] != SET_ALL_COORD) {
-    //     for (i = 0; i < (writebuff[2] + 3); i++)
-    //         printf("%02X ", writebuff[i]);
-    //     printf("\n");
-    // } else {
-    //     for (i = 0; i < 16; i++)
-    //         printf("%02X ", writebuff[i]);
-    //     printf("\n");
-    // }
-    return ret;
-}
+// int serialTX(int fd, ComuType comutype, unsigned char databuff[]) {
+//     int ret = 0, i;
+//     unsigned char writebuff[32] = {0};
+//     writebuff[0] = writebuff[1] = FLAG_START;
+//     switch (comutype) {
+//             // 设置指令帧
+//         case FREEMODE:
+//             // 自由模式
+//             writebuff[2] = 0x02; // 数据长度帧
+//             writebuff[3] = comutype;
+//             break;
+//         case READANGLE:
+//             // 读取所有机械臂舵机角度
+//             writebuff[2] = 0x02;
+//             writebuff[3] = comutype;
+//             break;
+//         case POST_ALL_ANGLE:
+//             // 发送全部角度
+//             writebuff[2] = 0x0f;
+//             writebuff[3] = comutype;
+//             rightArmAutoRealy(databuff); // 右臂角度自适应
+//             memcpy(writebuff + 4, databuff, 13);
+//             break;
+//         case READ_GRIPPER_ANGLE:
+//             // 读取夹爪角度
+//             writebuff[2] = 0x02; // 数据长度帧，按照机械臂的协议来
+//             writebuff[3] = comutype;
+//             break;
+//         case SET_GRIPPER_MODE:
+//             // 设置夹爪模式与设置夹爪角度相同
+//         case SET_GRIPPER_ANGLE:
+//             // 设置夹爪角度
+//             writebuff[2] = 0x04; // 数据长度帧
+//             writebuff[3] = comutype;
+//             memcpy(writebuff + 4, databuff, 2);
+//             break;
+//             // 读取当前位置坐标
+//         case READ_ALL_COORD:
+//             writebuff[2] = 0x02;
+//             writebuff[3] = comutype;
+//             break;
+//             // 设置位置坐标
+//         case SET_ALL_COORD:
+//             writebuff[2] = 0x10;
+//             writebuff[3] = comutype;
+//             memcpy(writebuff + 4, databuff, 14);
+//             break;
+//         default:
+//             Debug::CoutError("发送类型未定义！");
+//             return -1;
+//     }
+//     writebuff[2 + writebuff[2]] = FLAG_END; // 根据协议中的数据长度帧填充结束帧
+//     // 打印writebuff
+//     //  for (i = 0; i < (writebuff[2] + 3); i++) {
+//     //      printf("%02X ", writebuff[i]);
+//     //  }
+//     write(fd, writebuff, (int)(writebuff[2] + 3));
+//     // if (writebuff[3] != SET_ALL_COORD) {
+//     //     for (i = 0; i < (writebuff[2] + 3); i++)
+//     //         printf("%02X ", writebuff[i]);
+//     //     printf("\n");
+//     // } else {
+//     //     for (i = 0; i < 16; i++)
+//     //         printf("%02X ", writebuff[i]);
+//     //     printf("\n");
+//     // }
+//     return ret;
+// }
 
 etrs::bot::BotArm::BotArm(const string port_or_address, const string device_name) : port_or_address(port_or_address) {
     bool is_mac_address = MacAddress::isValidMacAddress(port_or_address);
@@ -127,8 +124,8 @@ void BotArm::setArmSpeed(const char arm_speed) { this->arm_speed = arm_speed; }
 
 char BotArm::getArmSpeed() { return this->arm_speed; }
 
-int BotArm::anglesToCommand(const int *angles, char *command) {
-    if (angles == nullptr || command == nullptr) {
+int BotArm::anglesToCommand(const int *angles, char *&command) {
+    if (angles == nullptr) {
         Debug::CoutError("机械臂角度指令转换失败！角度指针或指令指针为空！");
         return 0;
     }
@@ -148,7 +145,7 @@ int BotArm::anglesToCommand(const int *angles, char *command) {
     return cmd_len;
 }
 
-int BotArm::coordToCommand(const float *coord, char *command) {
+int BotArm::coordToCommand(const float *coord, char *&command) {
     // TODO: 末端坐标模式
     return 0;
 }
@@ -161,8 +158,20 @@ bool BotArm::reset() {
 }
 
 bool BotArm::executeByAngle(const int *angles) {
-    char data_buffer[20];
+    char *data_buffer = nullptr;
     int data_length = anglesToCommand(angles, data_buffer);
+    // char reset_buffer[18] = {0xFE, 0xFE, 0x0F, 0x22, 0x00, 0x00, 0x00, 0x00, 0x00,
+    //                          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1E, 0xFA};
+    // cout << "RESET: ";
+    // for (int i = 0; i < 18; i++) {
+    //     cout << hex << (int)reset_buffer[i] << ",";
+    // }
+    // cout << endl;
+    // cout << "DATA: ";
+    // for (int i = 0; i < 18; i++) {
+    //     cout << hex << (int)data_buffer[i] << ",";
+    // }
+    // cout << endl;
     return this->device->sendData(data_buffer, data_length) > 0;
 }
 
@@ -190,7 +199,6 @@ bool BotArm::executeByCoord(const float *coord) {
 //             break;
 //         }
 //         case etrs::bot::BotArm::DataSet::ALL_COORD: {
-
 //             break;
 //         }
 //         default:

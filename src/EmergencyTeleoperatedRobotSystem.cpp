@@ -202,18 +202,18 @@ int main(int argc, char **argv) {
     bot_led.setLedColor(etrs::bot::BotLed::LedColor::RED);
 
     // 创建服务器等待连接
-    etrs::net::Client client(SERVER_PORT);
+    etrs::net::HoloCommunicator client(SERVER_PORT);
     client.createServerSocket();
     client.acceptConnection([&]() {
         // LED亮绿
         bot_led.setLedColor(etrs::bot::BotLed::LedColor::GREEN);
-        Debug::CoutSuccess("Client 连接成功");
+        Debug::CoutSuccess("HoloCommunicator 连接成功");
     });
 
-    etrs::net::Client client1(SERVER_PORT, client.server_socket_fd);
+    etrs::net::HoloCommunicator client1(SERVER_PORT, client.server_socket_fd);
     // client1.createServerSocket();
     // client1.acceptConnection([&]() {
-    //     Debug::CoutSuccess("Client 2 连接成功");
+    //     Debug::CoutSuccess("HoloCommunicator 2 连接成功");
     // });
 
     // 定义互斥锁

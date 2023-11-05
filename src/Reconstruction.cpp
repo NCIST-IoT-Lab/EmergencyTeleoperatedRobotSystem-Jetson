@@ -354,7 +354,7 @@ int main(int argc, char **argv) {
             // 保存数据
             // 获取当前时间
             Debug::CoutDebug("保存点云文件中...");
-            string time_string = Time::getCurrentTime();
+            string time_string = Timer::getCurrentTime();
             string file_name = CLOUD_FILE_PATH + time_string + ".ply";
             open3d::t::io::WritePointCloud(file_name, point_cloud);
             Debug::CoutSuccess("点云文件 {} 保存成功！", file_name);

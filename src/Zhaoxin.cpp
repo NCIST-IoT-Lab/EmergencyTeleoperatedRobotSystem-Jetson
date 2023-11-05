@@ -15,7 +15,7 @@ using namespace etrs::utility;
 
 int main(int argc, char **argv) {
 
-    etrs::net::LocalProcessCommunicator lpcom(924);
+    etrs::net::BaseCommunicator lpcom(924);
     lpcom.createServerSocket();
     cout << "server socket created" << endl;
     lpcom.acceptConnection();

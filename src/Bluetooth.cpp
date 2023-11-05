@@ -52,7 +52,7 @@ int BleDevice::bleConnectL2cap(string mac_address) { // arm mac address: 08:B6:1
     }
     Debug::CoutSuccess("{}设备连接成功！fd = {}", this->device_name, fd);
 
-    modifyMtu(10);
+    // modifyMtu(10);
 
     // MTU默认23字节： op code(1 字节)，handle(2 字节，小端)，payload(0-20字节)
     // char on[] = {0x12, 0x2d, 0x00, 0xFE, 0xFE, 0x0F, 0x22, 0x00, 0x00, 0x00, 0x00,

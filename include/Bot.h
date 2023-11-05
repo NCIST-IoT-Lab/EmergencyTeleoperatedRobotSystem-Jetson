@@ -77,6 +77,8 @@ namespace etrs::bot {
         char getArmSpeed();
         // 重置机械臂
         bool reset();
+        // TODO: 蜷缩机械臂
+        bool curl();
         // 使用角度值执行指令
         bool executeByAngle(const int *angles);
         // 使用坐标值执行指令
@@ -96,9 +98,9 @@ namespace etrs::bot {
     private:
         int initCommand(CommandTypeSet command_type, char *&command);
         // 转换舵机角度为指令
-        int anglesToCommand(const int *angles, char *command);
+        int anglesToCommand(const int *angles, char *&command);
         // 转换末端坐标值为指令
-        int coordToCommand(const float *coord, char *command);
+        int coordToCommand(const float *coord, char *&command);
     };
 
     class STM32 {

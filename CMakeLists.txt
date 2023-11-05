@@ -36,17 +36,20 @@ find_package(jsoncpp REQUIRED)
 
 SET(EXECUTABLE_OUTPUT_PATH ../../../ETRS/bin)
 
+file(GLOB_RECURSE UTILITY src/utility/*.cpp)
+
 add_executable(EmergencyTeleoperatedRobotSystem
         src/EmergencyTeleoperatedRobotSystem.cpp 
         src/AzureKinectExtrinsics.cpp 
         src/SoundSourceLocalization.cpp
         src/AzureKinect.cpp 
-        src/utility/Utility.cpp
+        # src/utility/Utility.cpp
         src/Bot.cpp
         src/Network.cpp
         src/Bluetooth.cpp
         src/Device.cpp
         src/Serial.cpp
+        ${UTILITY}
         ${PROTO_SRCS} 
         ${PROTO_HDRS} 
         )
@@ -56,12 +59,13 @@ add_executable(Recon
         src/AzureKinectExtrinsics.cpp 
         src/SoundSourceLocalization.cpp
         src/AzureKinect.cpp 
-        src/utility/Utility.cpp
+        # src/utility/Utility.cpp
         src/Bot.cpp
         src/Network.cpp
         src/Bluetooth.cpp
         src/Device.cpp
         src/Serial.cpp
+        ${UTILITY}
         ${PROTO_SRCS} 
         ${PROTO_HDRS} 
         )
@@ -92,12 +96,13 @@ add_executable(Reconstruction
         src/Reconstruction.cpp 
         src/AzureKinectExtrinsics.cpp 
         src/AzureKinect.cpp 
-        src/utility/Utility.cpp
+        # src/utility/Utility.cpp
         src/Bot.cpp
         src/Network.cpp
         src/Bluetooth.cpp
         src/Device.cpp
         src/Serial.cpp
+        ${UTILITY}
         ${PROTO_SRCS} 
         ${PROTO_HDRS} 
         )
