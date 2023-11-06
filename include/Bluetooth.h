@@ -41,6 +41,7 @@ namespace etrs::device::bt {
     public:
         explicit BleDevice(string mac_address, string device_name = "###");
         explicit BleDevice(string mac_address, const char *op_code, const char *handle, string device_name = "###");
+        ~BleDevice();
 
         void setOpCode(const char *op_code);
         void setHandle(const char *handle);

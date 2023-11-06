@@ -2,8 +2,8 @@
 // Created by Cassius0924 on 4/30/23.
 //
 
-#ifndef _CASAZUREKINECT_H_
-#define _CASAZUREKINECT_H_
+#ifndef _AZURE_KINECT_H_
+#define _AZURE_KINECT_H_
 
 #include <k4a/k4a.hpp>
 #include <Utility.h>

@@ -37,6 +37,7 @@ namespace etrs::net {
 
     public:
         explicit BaseCommunicator(const int port);
+        ~BaseCommunicator();
         int createServerSocket();
         void acceptConnection(std::function<void()> onConnect = nullptr);
         bool sendData(const unsigned char *send_buffer, const int send_length);

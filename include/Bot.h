@@ -70,6 +70,9 @@ namespace etrs::bot {
 
     public:
         explicit BotArm(const string port_or_address, const string device_name = "###");
+
+        ~BotArm();
+
         void setDeviceName(const string device_name);
         // 设置机械臂速度
         void setArmSpeed(const char arm_speed);
@@ -113,6 +116,7 @@ namespace etrs::bot {
             LED = 0x02,
         };
         STM32(string serial_port_name = DEFAULT_SERIAL_PORT_NAME);
+        ~STM32();
         bool sendData(unsigned char *send_buffer, const int send_length);
         // bool sendData(char *send_buffer, const int send_length);
         int recvData(unsigned char *recv_buffer, const int recv_length);
@@ -126,6 +130,7 @@ namespace etrs::bot {
 
     public:
         BotMotor(string serial_port_name);
+        ~BotMotor();
         bool rotate(string direction, std::function<void()> onRotated = nullptr);
         bool rotate(string direction, int angle, int speed, std::function<void()> onRotated = nullptr);
         bool rotate(int angle, int speed, std::function<void()> onRotated = nullptr);
@@ -141,6 +146,7 @@ namespace etrs::bot {
 
     public:
         BotCar(string serial_port_name, const char speed_value, float scale = 1.0f);
+        ~BotCar();
         bool sendData(unsigned char *send_buffer, const int send_length);
         int recvData(unsigned char *recv_buffer, const int recv_length);
         void setSpeed(const char speed_value, float scale = 1.0);
@@ -175,6 +181,7 @@ namespace etrs::bot {
             CUSTOM = 0x04,
         };
         BotLed(string serial_port_name);
+        ~BotLed();
         bool setLedColor(LedColor color);
         bool setLedColor(int r, int g, int b);
     };

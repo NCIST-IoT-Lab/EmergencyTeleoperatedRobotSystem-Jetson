@@ -56,48 +56,34 @@ namespace etrs::utility {
 
     class Debug {
     public:
-        // template <typename... Args> static void CoutInfo(const char *format, Args... args) {
-        //     cout << COUT_MSG_BOLD_ETRS << fmt::format(format, args...) << COUT_RESET << endl;
-        // }
-
-        // template <typename... Args> static void CoutError(const char *format, Args... args) {
-        //     cout << COUT_MSG_BOLD_ETRS_ERROR << fmt::format(format, args...) << COUT_RESET << endl;
-        // }
-
-        // template <typename... Args> static void CoutSuccess(const char *format, Args... args) {
-        //     cout << COUT_MSG_BOLD_ETRS_SUCCESS << fmt::format(format, args...) << COUT_RESET << endl;
-        // }
-
-        // template <typename... Args> static void CoutWarning(const char *format, Args... args) {
-        //     cout << COUT_MSG_BOLD_ETRS_WARNING << fmt::format(format, args...) << COUT_RESET << endl;
-        // }
-
-        // template <typename... Args> static void CoutDebug(const char *format, Args... args) {
-        //     cout << COUT_MSG_BOLD_ETRS_DEBUG << fmt::format(format, args...) << COUT_RESET << endl;
-        // }
-
-        template <typename T, typename... Args> static void CoutInfo(T format, Args... args) {
+        template <typename T, typename... Args>
+        static void CoutInfo(T format, Args... args) {
             cout << COUT_MSG_BOLD_ETRS << fmt::format(format, args...) << COUT_RESET << endl;
         }
 
-        template <typename T, typename... Args> static void CoutError(T format, Args... args) {
+        template <typename T, typename... Args>
+        static void CoutError(T format, Args... args) {
             cout << COUT_MSG_BOLD_ETRS_ERROR << fmt::format(format, args...) << COUT_RESET << endl;
         }
 
-        template <typename T, typename... Args> static void CoutSuccess(T format, Args... args) {
+        template <typename T, typename... Args>
+        static void CoutSuccess(T format, Args... args) {
             cout << COUT_MSG_BOLD_ETRS_SUCCESS << fmt::format(format, args...) << COUT_RESET << endl;
         }
 
-        template <typename T, typename... Args> static void CoutWarning(T format, Args... args) {
+        template <typename T, typename... Args>
+        static void CoutWarning(T format, Args... args) {
             cout << COUT_MSG_BOLD_ETRS_WARNING << fmt::format(format, args...) << COUT_RESET << endl;
         }
 
-        template <typename T, typename... Args> static void CoutDebug(T format, Args... args) {
+        template <typename T, typename... Args>
+        static void CoutDebug(T format, Args... args) {
             cout << COUT_MSG_BOLD_ETRS_DEBUG << fmt::format(format, args...) << COUT_RESET << endl;
         }
 
         // 百分比变化，使用 std::flush;
-        template <typename T, typename... Args> static void CoutFlush(T format, Args... args) {
+        template <typename T, typename... Args>
+        static void CoutFlush(T format, Args... args) {
             cout << '\r' << COUT_MSG_BOLD_ETRS << fmt::format(format, args...) << COUT_RESET << std::flush;
         }
 

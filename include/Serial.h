@@ -27,6 +27,7 @@ namespace etrs::device::serial {
 
     public:
         explicit SerialDevice(const string serial_port_name, const string device_name = "###");
+        ~SerialDevice();
         int sendData(const char *data_buffer, const int data_length);
         int recvData(char *recv_buffer, const int recv_length) override;
 

@@ -2,8 +2,8 @@
 // Created by HoChihChou on 4/7/23.
 //
 
-#ifndef _AZUREKINECTEXTRINSICS_H_
-#define _AZUREKINECTEXTRINSICS_H_
+#ifndef _AZURE_KINECT_EXTRINSICS_H_
+#define _AZURE_KINECT_EXTRINSICS_H_
 
 // 导入Kinect库
 #include <k4a/k4a.h>
@@ -37,6 +37,7 @@ namespace etrs {
 
     bool getAzureKinectImuSample(k4a_device_t device, k4a_imu_sample_t *imu_sample, int32_t timeout_in_ms);
 
+    // TODO: 添加命名空间
     class EulerAngle {
     public:
         double roll, pitch, yaw;                              // 横滚角，俯仰角，偏航角，单位弧度
@@ -52,4 +53,4 @@ namespace etrs {
     Eigen::Matrix3d eulerAngle2RotationMatrix(const EulerAngle &angle);
 } // namespace etrs
 
-#endif //_AZUREKINECTEXTRINSICS_H_
+#endif //_AZURE_KINECT_EXTRINSICS_H_

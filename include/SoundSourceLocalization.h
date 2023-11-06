@@ -2,8 +2,8 @@
 // Create by HoChihchou on 2023/5/6
 //
 
-#ifndef SOUND_SOURCE_LOCALIZATION_CASWEBSOCKET_H
-#define SOUND_SOURCE_LOCALIZATION_CASWEBSOCKET_H
+#ifndef _SOUND_SOURCE_LOCALIZATION_CASWEBSOCKET_H_
+#define _SOUND_SOURCE_LOCALIZATION_CASWEBSOCKET_H_
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -42,4 +42,4 @@ namespace etrs::ssl {
     };
 } // namespace etrs::ssl
 
-#endif // SOUND_SOURCE_LOCALIZATION_CASWEBSOCKET_H
+#endif // _SOUND_SOURCE_LOCALIZATION_CASWEBSOCKET_H_
