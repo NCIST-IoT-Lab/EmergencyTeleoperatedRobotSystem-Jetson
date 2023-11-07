@@ -1,7 +1,6 @@
 //
 // Create by HoChihchou on 2023/3/27
 //
-// 读取配置文件
 
 #include "Timer.h"
 

@@ -10,5 +10,6 @@
 #include "MacAddress.h"
 #include "Timer.h"
 #include "Transformation.h"
+#include "MathUtils.h"
 
 #endif // _UTILITY_H_
