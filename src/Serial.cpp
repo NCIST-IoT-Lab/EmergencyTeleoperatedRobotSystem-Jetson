@@ -2,6 +2,8 @@
 
 using namespace etrs::device::serial;
 
+SerialDevice::~SerialDevice() {}
+
 SerialDevice::SerialDevice(const string serial_port_name, const string device_name)
     : serial_port_name(serial_port_name) {
     this->fd = serialConnect(serial_port_name);

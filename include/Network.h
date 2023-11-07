@@ -57,7 +57,8 @@ namespace etrs::net {
 
     public:
         explicit PythonCommunicator(const int port);
-        int sendMessageFromMesh(open3d::geometry::TriangleMesh mesh, const int interval);
+        ~PythonCommunicator();
+        int sendMessageFromPointCloud(open3d::geometry::PointCloud point_cloud, const int interval);
         // int sendMessageFromMesh(std::shared_ptr<open3d::geometry::TriangleMesh> mesh_ptr, const int interval);
     
     private:
@@ -70,6 +71,7 @@ namespace etrs::net {
     public:
         explicit HoloCommunicator(const int port);
         explicit HoloCommunicator(const int port, int server_socket_fd);
+        ~HoloCommunicator();
         // int createServerSocket() override;
         // void acceptConnection(std::function<void()> onConnect = nullptr) override;
         // bool sendMessage(google::protobuf::Message &message);

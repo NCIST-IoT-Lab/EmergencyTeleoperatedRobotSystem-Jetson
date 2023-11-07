@@ -24,77 +24,13 @@ void rightArmAutoRealy(unsigned char *databuff) {
     return;
 }
 
-// 串口发送  ComuType为类型  databuff中存储数据
-// int serialTX(int fd, ComuType comutype, unsigned char databuff[]) {
-//     int ret = 0, i;
-//     unsigned char writebuff[32] = {0};
-//     writebuff[0] = writebuff[1] = FLAG_START;
-//     switch (comutype) {
-//             // 设置指令帧
-//         case FREEMODE:
-//             // 自由模式
-//             writebuff[2] = 0x02; // 数据长度帧
-//             writebuff[3] = comutype;
-//             break;
-//         case READANGLE:
-//             // 读取所有机械臂舵机角度
-//             writebuff[2] = 0x02;
-//             writebuff[3] = comutype;
-//             break;
-//         case POST_ALL_ANGLE:
-//             // 发送全部角度
-//             writebuff[2] = 0x0f;
-//             writebuff[3] = comutype;
-//             rightArmAutoRealy(databuff); // 右臂角度自适应
-//             memcpy(writebuff + 4, databuff, 13);
-//             break;
-//         case READ_GRIPPER_ANGLE:
-//             // 读取夹爪角度
-//             writebuff[2] = 0x02; // 数据长度帧，按照机械臂的协议来
-//             writebuff[3] = comutype;
-//             break;
-//         case SET_GRIPPER_MODE:
-//             // 设置夹爪模式与设置夹爪角度相同
-//         case SET_GRIPPER_ANGLE:
-//             // 设置夹爪角度
-//             writebuff[2] = 0x04; // 数据长度帧
-//             writebuff[3] = comutype;
-//             memcpy(writebuff + 4, databuff, 2);
-//             break;
-//             // 读取当前位置坐标
-//         case READ_ALL_COORD:
-//             writebuff[2] = 0x02;
-//             writebuff[3] = comutype;
-//             break;
-//             // 设置位置坐标
-//         case SET_ALL_COORD:
-//             writebuff[2] = 0x10;
-//             writebuff[3] = comutype;
-//             memcpy(writebuff + 4, databuff, 14);
-//             break;
-//         default:
-//             Debug::CoutError("发送类型未定义！");
-//             return -1;
-//     }
-//     writebuff[2 + writebuff[2]] = FLAG_END; // 根据协议中的数据长度帧填充结束帧
-//     // 打印writebuff
-//     //  for (i = 0; i < (writebuff[2] + 3); i++) {
-//     //      printf("%02X ", writebuff[i]);
-//     //  }
-//     write(fd, writebuff, (int)(writebuff[2] + 3));
-//     // if (writebuff[3] != SET_ALL_COORD) {
-//     //     for (i = 0; i < (writebuff[2] + 3); i++)
-//     //         printf("%02X ", writebuff[i]);
-//     //     printf("\n");
-//     // } else {
-//     //     for (i = 0; i < 16; i++)
-//     //         printf("%02X ", writebuff[i]);
-//     //     printf("\n");
-//     // }
-//     return ret;
-// }
+BotArm::~BotArm() {
+    if (this->device != nullptr) {
+        delete this->device;
+    }
+}
 
-etrs::bot::BotArm::BotArm(const string port_or_address, const string device_name) : port_or_address(port_or_address) {
+BotArm::BotArm(const string port_or_address, const string device_name) : port_or_address(port_or_address) {
     bool is_mac_address = MacAddress::isValidMacAddress(port_or_address);
     if (is_mac_address) {         // 如果是MAC地址
         char op_code[1] = {0x52}; // TODO: 目前写死，需要修改成可变的
@@ -180,34 +116,6 @@ bool BotArm::executeByCoord(const float *coord) {
     return false;
 }
 
-// int etrs::bot::BotArm::recvData(unsigned char *recv_buffer, const int recv_length) {
-//     int len = -1;
-//     while ((len = read(this->fd, recv_buffer, recv_length)) < 0)
-//         ;
-//     switch (recv_buffer[3]) { // 数据帧
-//         case etrs::bot::BotArm::DataSet::ALL_ANGLE: {
-//             // 计算方法：角度值低位 + 角度高位值乘以256 先判断是否大于33000，
-//             //         如果大于33000就再减去65536，最后除以100，如果小于33000就直接除以100
-//             int angles[6];
-//             for (int i = 0; i < 6; i++) {
-//                 if (recv_buffer[5 + 2 * i] + recv_buffer[4 + 2 * i] * 256 > 33000) {
-//                     angles[i] = (recv_buffer[5 + 2 * i] + recv_buffer[4 + 2 * i] * 256 - 65536) / 100;
-//                 } else {
-//                     angles[i] = (recv_buffer[5 + 2 * i] + recv_buffer[4 + 2 * i] * 256) / 100;
-//                 }
-//             }
-//             break;
-//         }
-//         case etrs::bot::BotArm::DataSet::ALL_COORD: {
-//             break;
-//         }
-//         default:
-//             Debug::CoutError("未知的机械臂数据类型！");
-//             break;
-//     }
-//     return len;
-// }
-
 int BotArm::recvData(char *recv_buffer, const int recv_length) {
     return this->device->recvData(recv_buffer, recv_length);
 }
@@ -246,7 +154,7 @@ int BotArm::initCommand(BotArm::CommandTypeSet command_type, char *&command) {
     return data_len + 3;
 }
 
-bool etrs::bot::BotArm::sendCommand(etrs::bot::BotArm::CommandTypeSet command_type) {
+bool BotArm::sendCommand(BotArm::CommandTypeSet command_type) {
     // char *command;
     // int cmd_len = initCommand(command_type, command);
     // memcpy(this->command_buffer + 2, command, command_length);
@@ -259,19 +167,21 @@ bool etrs::bot::BotArm::sendCommand(etrs::bot::BotArm::CommandTypeSet command_ty
     return false;
 }
 
-bool etrs::bot::BotArm::openGripper(const char speed) {
+bool BotArm::openGripper(const char speed) {
     this->gripper_buffer[4] = 0x64;
     this->gripper_buffer[5] = speed;
     return this->device->sendData(this->gripper_buffer, 7);
 }
 
-bool etrs::bot::BotArm::closeGripper(const char speed) {
+bool BotArm::closeGripper(const char speed) {
     this->gripper_buffer[4] = 0x00;
     this->gripper_buffer[5] = speed;
     return this->device->sendData(this->gripper_buffer, 7);
 }
 
-etrs::bot::STM32::STM32(string serial_port_name) {
+STM32::~STM32() {}
+
+STM32::STM32(string serial_port_name) {
     struct termios newtio;
     tcgetattr(this->fd, &newtio);
     newtio.c_cflag &= ~CSIZE;         // 数据位屏蔽 将c_cflag全部清零
@@ -299,23 +209,25 @@ etrs::bot::STM32::STM32(string serial_port_name) {
     Debug::CoutSuccess("STM32设备初始化成功！");
 }
 
-bool etrs::bot::STM32::sendData(unsigned char *send_buffer, const int send_length) {
+bool STM32::sendData(unsigned char *send_buffer, const int send_length) {
     if (write(this->fd, send_buffer, send_length) < 0) {
         return false;
     }
     return true;
 }
 
-int etrs::bot::STM32::recvData(unsigned char *recv_buffer, const int recv_length) {
+int STM32::recvData(unsigned char *recv_buffer, const int recv_length) {
     int len = -1;
     while ((len = read(this->fd, recv_buffer, recv_length)) < 0)
         ;
     return len;
 }
 
-etrs::bot::BotMotor::BotMotor(string serial_port_name = DEFAULT_SERIAL_PORT_NAME) : STM32(serial_port_name) {
+BotMotor::~BotMotor() {}
+
+BotMotor::BotMotor(string serial_port_name = DEFAULT_SERIAL_PORT_NAME) : STM32(serial_port_name) {
     this->buffer[0] = 0xFF; // 包头
-    this->buffer[1] = etrs::bot::BotMotor::CommandTypeSet::MOTOR;
+    this->buffer[1] = BotMotor::CommandTypeSet::MOTOR;
     this->buffer[2] = 0x00; // 方向
     this->buffer[3] = 0x00; // 角度高位
     this->buffer[4] = 0x00; // 角度低位
@@ -324,7 +236,7 @@ etrs::bot::BotMotor::BotMotor(string serial_port_name = DEFAULT_SERIAL_PORT_NAME
     this->buffer[7] = 0xFE; // 包尾
 }
 
-bool etrs::bot::BotMotor::rotate(string direction, function<void()> onRotated) {
+bool BotMotor::rotate(string direction, function<void()> onRotated) {
     return rotate(direction, 360, 10000, onRotated);
     //     if (direction == "F") {
     //     this->buffer[2] = 0x01; // 顺时针
@@ -343,7 +255,7 @@ bool etrs::bot::BotMotor::rotate(string direction, function<void()> onRotated) {
     // }
 }
 
-bool etrs::bot::BotMotor::rotate(string direction, int angle, int speed, function<void()> onRotated) {
+bool BotMotor::rotate(string direction, int angle, int speed, function<void()> onRotated) {
     if (onRotated != nullptr) {
         onRotated();
     }
@@ -366,7 +278,7 @@ bool etrs::bot::BotMotor::rotate(string direction, int angle, int speed, functio
     return false;
 }
 
-bool etrs::bot::BotMotor::rotate(int angle, int speed, function<void()> onRotated) {
+bool BotMotor::rotate(int angle, int speed, function<void()> onRotated) {
     if (onRotated != nullptr) {
         onRotated();
     }
@@ -379,7 +291,10 @@ bool etrs::bot::BotMotor::rotate(int angle, int speed, function<void()> onRotate
     return STM32::sendData(this->buffer, 8);
 }
 
-etrs::bot::BotCar::BotCar(string serial_port_name, const char speed_value, float scale) {
+
+BotCar::~BotCar(){}
+
+BotCar::BotCar(string serial_port_name, const char speed_value, float scale) {
     struct termios newtio;
     tcgetattr(this->fd, &newtio);
     newtio.c_cflag &= ~CSIZE;
@@ -408,14 +323,14 @@ etrs::bot::BotCar::BotCar(string serial_port_name, const char speed_value, float
     setSpeed(speed_value, scale);
 }
 
-bool etrs::bot::BotCar::sendData(unsigned char *send_buffer, const int send_length) {
+bool BotCar::sendData(unsigned char *send_buffer, const int send_length) {
     if (write(this->fd, send_buffer, send_length) < 0) {
         return false;
     }
     return true;
 }
 
-int etrs::bot::BotCar::recvData(unsigned char *recv_buffer, const int recv_length) {
+int BotCar::recvData(unsigned char *recv_buffer, const int recv_length) {
     int len = -1;
     while ((len = read(this->fd, recv_buffer, recv_length)) < 0)
         ;
@@ -432,7 +347,7 @@ int etrs::bot::BotCar::recvData(unsigned char *recv_buffer, const int recv_lengt
  * 旋转的角速度可以通过两个轮子的速度差除以两个轮子的轴距来计算。
  * 已知小车轮距为 53cm，即旋转角速度 = abs(left_speed - right_speed) / 53。
  */
-void etrs::bot::BotCar::setSpeed(const char speed_value, float scale) {
+void BotCar::setSpeed(const char speed_value, float scale) {
     this->buffer[0] = 0xff;
     this->buffer[1] = 0xfe;
     this->buffer[2] = speed_value;
@@ -463,19 +378,19 @@ void etrs::bot::BotCar::setSpeed(const char speed_value, float scale) {
     Debug::CoutInfo("小车旋转角速度（deg/s）：{}", this->angle_speed);
 }
 
-bool etrs::bot::BotCar::moveForward() {
+bool BotCar::moveForward() {
     this->buffer[4] = 0x01;
     this->buffer[5] = 0x01;
     return sendData(this->buffer, 10);
 }
-bool etrs::bot::BotCar::moveForwardTime(float time_s) {
+bool BotCar::moveForwardTime(float time_s) {
     if (!moveForward()) {
         return false;
     }
     this_thread::sleep_for(chrono::milliseconds((int)(time_s * 1000)));
     return stopCar();
 }
-bool etrs::bot::BotCar::moveForwardDistance(float distance) {
+bool BotCar::moveForwardDistance(float distance) {
     if (distance < 0) {
         return false;
     } else if (distance == 0) {
@@ -484,19 +399,19 @@ bool etrs::bot::BotCar::moveForwardDistance(float distance) {
     return moveForwardTime(distance / this->speed);
 }
 
-bool etrs::bot::BotCar::moveBackward() {
+bool BotCar::moveBackward() {
     this->buffer[4] = 0x00;
     this->buffer[5] = 0x00;
     return sendData(this->buffer, 10);
 }
-bool etrs::bot::BotCar::moveBackwardTime(float time_s) {
+bool BotCar::moveBackwardTime(float time_s) {
     if (!moveBackward()) {
         return false;
     }
     this_thread::sleep_for(chrono::milliseconds((int)(time_s * 1000)));
     return stopCar();
 }
-bool etrs::bot::BotCar::moveBackwardDistance(float distance) {
+bool BotCar::moveBackwardDistance(float distance) {
     if (distance < 0) {
         return false;
     } else if (distance == 0) {
@@ -505,46 +420,46 @@ bool etrs::bot::BotCar::moveBackwardDistance(float distance) {
     return moveBackwardTime(distance / this->speed);
 }
 
-bool etrs::bot::BotCar::turnLeft() {
+bool BotCar::turnLeft() {
     this->buffer[4] = 0x00;
     this->buffer[5] = 0x01;
     return sendData(this->buffer, 10);
 }
-bool etrs::bot::BotCar::turnLeftTime(float time_s) {
+bool BotCar::turnLeftTime(float time_s) {
     if (!turnLeft()) {
         return false;
     }
     this_thread::sleep_for(chrono::milliseconds((int)(time_s * 1000)));
     return stopCar();
 }
-bool etrs::bot::BotCar::turnLeftAngle(float angle) {
+bool BotCar::turnLeftAngle(float angle) {
     if (angle <= 0) {
         return false;
     }
     return turnLeftTime(angle / this->angle_speed);
 }
 
-bool etrs::bot::BotCar::turnRight() {
+bool BotCar::turnRight() {
     this->buffer[4] = 0x01;
     this->buffer[5] = 0x00;
     return sendData(this->buffer, 10);
 }
 
-bool etrs::bot::BotCar::turnRightTime(float time_s) {
+bool BotCar::turnRightTime(float time_s) {
     if (!turnRight()) {
         return false;
     }
     this_thread::sleep_for(chrono::milliseconds((int)(time_s * 1000)));
     return stopCar();
 }
-bool etrs::bot::BotCar::turnRightAngle(float angle) {
+bool BotCar::turnRightAngle(float angle) {
     if (angle <= 0) {
         return false;
     }
     return turnRightTime(angle / this->angle_speed);
 }
 
-bool etrs::bot::BotCar::turnAngle(float angle) {
+bool BotCar::turnAngle(float angle) {
     if (angle < 0) {
         return turnLeftAngle(-angle);
     } else if (angle > 0) {
@@ -553,7 +468,7 @@ bool etrs::bot::BotCar::turnAngle(float angle) {
     return true;
 }
 
-bool etrs::bot::BotCar::autoTurnByAngle(float angle) {
+bool BotCar::autoTurnByAngle(float angle) {
     if (angle > 0) {
         this->buffer2[4] = 0x01; // 大于0左转，小于0右转
         this->buffer2[5] = (int)angle - 2;
@@ -566,7 +481,7 @@ bool etrs::bot::BotCar::autoTurnByAngle(float angle) {
     return sendData(this->buffer2, 10);
 }
 
-bool etrs::bot::BotCar::autoTurnByAngleAndSpeed(float angle, char left_speed_value, char right_speed_value) {
+bool BotCar::autoTurnByAngleAndSpeed(float angle, char left_speed_value, char right_speed_value) {
     int left_temp = this->buffer2[2];
     int right_temp = this->buffer2[3];
     this->buffer2[2] = left_speed_value;
@@ -579,7 +494,7 @@ bool etrs::bot::BotCar::autoTurnByAngleAndSpeed(float angle, char left_speed_val
     return true;
 }
 
-bool etrs::bot::BotCar::stopCar() {
+bool BotCar::stopCar() {
     int left_temp = this->buffer[2];
     int right_temp = this->buffer[3];
     this->buffer[2] = 0x00;
@@ -592,7 +507,7 @@ bool etrs::bot::BotCar::stopCar() {
     return true;
 }
 
-bool etrs::bot::BotCar::executeMoveSequence(float *seq, int seq_length) {
+bool BotCar::executeMoveSequence(float *seq, int seq_length) {
     float flag = seq[0];
     if (flag == 1) { // 先移动
         // 奇数下标为移动，偶数下标为旋转
@@ -633,9 +548,12 @@ bool etrs::bot::BotCar::executeMoveSequence(float *seq, int seq_length) {
     return true;
 }
 
-etrs::bot::BotLed::BotLed(string serial_port_name) {
+
+BotLed::~BotLed(){}
+
+BotLed::BotLed(string serial_port_name) {
     this->buffer[0] = 0xFF;
-    this->buffer[1] = etrs::bot::BotLed::CommandTypeSet::LED;
+    this->buffer[1] = BotLed::CommandTypeSet::LED;
     this->buffer[2] = 0x00; // 颜色
     this->buffer[3] = 0x00; // r
     this->buffer[4] = 0x00; // g
@@ -643,12 +561,12 @@ etrs::bot::BotLed::BotLed(string serial_port_name) {
     this->buffer[6] = 0x00;
     this->buffer[7] = 0xFE;
 }
-bool etrs::bot::BotLed::setLedColor(LedColor color) {
+bool BotLed::setLedColor(LedColor color) {
     this->buffer[2] = color;
     return STM32::sendData(this->buffer, 8);
 }
 
-bool etrs::bot::BotLed::setLedColor(int r, int g, int b) {
+bool BotLed::setLedColor(int r, int g, int b) {
     this->buffer[2] = LedColor::CUSTOM;
     this->buffer[3] = r;
     this->buffer[4] = g;

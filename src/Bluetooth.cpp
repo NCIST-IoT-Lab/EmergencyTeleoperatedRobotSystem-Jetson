@@ -6,6 +6,8 @@ using namespace etrs::device::bt;
 // 通过 MAC 地址连接蓝牙设备，并创建创建 socket，返回 socket 文件描述符
 #define ATT_CID 4
 
+BleDevice::~BleDevice() {}
+
 BleDevice::BleDevice(string mac_address, string device_name) : mac_address(mac_address) {
     setDeviceName(device_name);
     this->fd = bleConnectL2cap(mac_address);
@@ -106,7 +108,7 @@ int BleDevice::sendData(const char *data_buffer, const int data_length) {
 
 int BleDevice::recvData(char *recv_buffer, const int recv_length) {
     int len = -1;
-    char buf[3] = {0x0A, 0x2a, 0x00};   //TODO: 目前写死
+    char buf[3] = {0x0A, 0x2a, 0x00}; // TODO: 目前写死
     write(this->fd, buf, 3);
     len = read(this->fd, recv_buffer, recv_length);
     return len;

@@ -20,7 +20,7 @@ Eigen::Matrix4d Transformation::RemoveXZRotation(const Eigen::Matrix4d &transfor
     Eigen::Matrix3d rotation = transformation.block<3, 3>(0, 0);
     Eigen::Vector3d translation = transformation.block<3, 1>(0, 3);
     Eigen::Vector3d euler_angles = rotation.eulerAngles(2, 1, 0); // ZYX
-    Debug::CoutDebug("ZYX_EulerAngles: {}, {}, {}", euler_angles[0], euler_angles[1], euler_angles[2]);
+    // Debug::CoutDebug("ZYX_EulerAngles: {}, {}, {}", euler_angles[0], euler_angles[1], euler_angles[2]);
 
     Eigen::Matrix3d rotation_matrix;
     double mod = fmod(M_PI, fabs(euler_angles[1]));
@@ -32,7 +32,7 @@ Eigen::Matrix4d Transformation::RemoveXZRotation(const Eigen::Matrix4d &transfor
     // rotation_matrix = Eigen::AngleAxisd(0.016, Eigen::Vector3d::UnitY());
 
     Eigen::Vector3d euler_angles1 = rotation_matrix.eulerAngles(2, 1, 0);
-    Debug::CoutDebug("NEW_EulerAngles: {}, {}, {}", euler_angles1[0], euler_angles1[1], euler_angles1[2]);
+    // Debug::CoutDebug("NEW_EulerAngles: {}, {}, {}", euler_angles1[0], euler_angles1[1], euler_angles1[2]);
 
     Eigen::Matrix4d result = Eigen::Matrix4d::Identity();
     result.block<3, 3>(0, 0) = rotation_matrix;

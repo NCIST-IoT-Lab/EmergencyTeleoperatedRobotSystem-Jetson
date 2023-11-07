@@ -44,7 +44,9 @@ bool getLocalIp(char *ip) {
 /**
  * BaseCommunicator
  * 通信基类
-*/
+ */
+BaseCommunicator::~BaseCommunicator() {}
+
 BaseCommunicator::BaseCommunicator(const int port) : port(port) {
     this->debug_messages = DebugMessages({
         {"get_local_ip_failed", "获取本地 IP 失败: {}"},
@@ -142,6 +144,7 @@ int BaseCommunicator::recvData(unsigned char *recv_buffer, const int recv_length
 
 bool BaseCommunicator::sendMessage(google::protobuf::Message &message) {
     ostringstream output_stream(ios::binary);
+    // 写入消息长度
     int message_size = message.ByteSizeLong();
     output_stream.write(reinterpret_cast<const char *>(&message_size), sizeof(message_size));
 
@@ -151,7 +154,6 @@ bool BaseCommunicator::sendMessage(google::protobuf::Message &message) {
     }
     // 获取序列化后的数据并发送到网络对端
     string serialized_data = output_stream.str();
-    // FIXME: 待验证
     return sendData((unsigned char *)serialized_data.data(), serialized_data.size());
 }
 
@@ -167,76 +169,56 @@ bool BaseCommunicator::recvMessage(etrs::proto::DataMessage &message) {
 /**
  * PythonCommunicator
  * 用于与本地 Python 进程通信
-*/
+ */
+PythonCommunicator::~PythonCommunicator() {}
 
 PythonCommunicator::PythonCommunicator(const int port) : BaseCommunicator(port) {
-    this->debug_messages.updateMessages(DebugMessages({
-        {"wait_connection", "等待 Python 进程连接..."},
-        {"connect_success", "Python 进程连接成功"},
-        {"connect_failed", "Python 进程连接失败"}
-    }));
+    this->debug_messages.updateMessages(DebugMessages({{"wait_connection", "等待 Python 进程连接..."},
+                                                       {"connect_success", "Python 进程连接成功"},
+                                                       {"connect_failed", "Python 进程连接失败"}}));
 }
 
-int PythonCommunicator::sendMessageFromMesh(open3d::geometry::TriangleMesh mesh, const int interval){
-    if (mesh.IsEmpty()) {
-        Debug::CoutError("Mesh 为空");
+int PythonCommunicator::sendMessageFromPointCloud(open3d::geometry::PointCloud point_cloud, const int interval) {
+    if (point_cloud.IsEmpty()) {
+        Debug::CoutError("Point cloud 为空");
         return -1;
     }
     etrs::proto::DataMessage data_message;
-    data_message.set_type(etrs::proto::DataMessage::MESH);
-    etrs::proto::Mesh *mesh_message = data_message.mutable_mesh();
-    const vector<Eigen::Vector3d> &vertices = mesh.vertices_;
-    const vector<Eigen::Vector3i> &triangles = mesh.triangles_;
-    const vector<Eigen::Vector3d> &colors = mesh.vertex_colors_;
+    data_message.set_type(etrs::proto::DataMessage::POINT_CLOUD);
+    etrs::proto::PointCloud *point_cloud_message = data_message.mutable_point_cloud();
+    const vector<Eigen::Vector3d> &points = point_cloud.points_;
 
     int write_count = 0;
-    for (int i = 0; i < triangles.size(); i++) {
-        etrs::proto::Vertex *v1 = mesh_message->add_v1();
-        int v1_index = triangles[i][0];
-        v1->set_x(vertices[v1_index][0]);
-        v1->set_y(vertices[v1_index][1]);
-        v1->set_z(vertices[v1_index][2]);
+    int point_size = points.size();
+    for (int i = 0; i < point_size; i++) {
+        etrs::proto::Point *p = point_cloud_message->add_points();
+        p->set_x(points[i][0]);
+        p->set_y(points[i][1]);
+        p->set_z(points[i][2]);
 
-        etrs::proto::Vertex *v2 = mesh_message->add_v2();
-        int v2_index = triangles[i][1];
-        v2->set_x(vertices[v2_index][0]);
-        v2->set_y(vertices[v2_index][1]);
-        v2->set_z(vertices[v2_index][2]);
-
-        etrs::proto::Vertex *v3 = mesh_message->add_v3();
-        int v3_index = triangles[i][2];
-        v3->set_x(vertices[v3_index][0]);
-        v3->set_y(vertices[v3_index][1]);
-        v3->set_z(vertices[v3_index][2]);
-
-        mesh_message->add_r((colors[v1_index][0] + colors[v2_index][0] + colors[v3_index][0]) / 3.0);
-        mesh_message->add_g((colors[v1_index][1] + colors[v2_index][1] + colors[v3_index][1]) / 3.0);
-        mesh_message->add_b((colors[v1_index][2] + colors[v2_index][2] + colors[v3_index][2]) / 3.0);
-
-        if ((i + 1) % interval == 0 || i == (triangles.size() - 1)) {
+        if ((i + 1) % interval == 0 || i == (point_size - 1)) {
             // unique_lock<mutex> lock(PythonCommunicator_mutex);
             sendMessage(data_message);
-            mesh_message->Clear();
+            point_cloud_message->Clear();
             write_count++;
         }
         Debug::CoutFlush("已发送：{}", write_count);
     }
-    Debug::CoutSection("发送完毕", "一共发送了 {} 次\n 面片数量 {} ", write_count, triangles.size());
+    Debug::CoutSection("发送完毕", "一共发送了 {} 次\n 面片数量 {} ", write_count, point_size);
     // sendExitMeshMessage();
     return write_count;
 }
 
-
 /**
  * HoloCommunicator
  * 用于与 HoloLens 2 客户端通信
-*/
+ */
+HoloCommunicator::~HoloCommunicator() {}
+
 HoloCommunicator::HoloCommunicator(const int port) : BaseCommunicator(port) {
-    this->debug_messages.updateMessages(DebugMessages({
-        {"wait_connection", "等待 Holo 客户端连接..."},
-        {"connect_success", "Holo 客户端连接成功"},
-        {"connect_failed", "Holo 客户端连接失败"}
-    }));
+    this->debug_messages.updateMessages(DebugMessages({{"wait_connection", "等待 Holo 客户端连接..."},
+                                                       {"connect_success", "Holo 客户端连接成功"},
+                                                       {"connect_failed", "Holo 客户端连接失败"}}));
 }
 
 HoloCommunicator::HoloCommunicator(const int port, int server_socket_fd) : BaseCommunicator(port) {
@@ -283,50 +265,51 @@ bool HoloCommunicator::sendExitMeshMessage() {
 }
 
 int HoloCommunicator::sendMessageFromMesh(std::shared_ptr<open3d::geometry::TriangleMesh> mesh_ptr,
-                                           const int interval) {
+                                          const int interval) {
     if (mesh_ptr == nullptr) {
         Debug::CoutError("Mesh 为空");
         return -1;
     }
     etrs::proto::DataMessage data_message;
     data_message.set_type(etrs::proto::DataMessage::MESH); // 设置消息类型
-    etrs::proto::Mesh *mesh_message = data_message.mutable_mesh();
+    etrs::proto::Mesh *point_cloud_message = data_message.mutable_mesh();
     const vector<Eigen::Vector3d> &vertices = mesh_ptr->vertices_;    // 顶点坐标
     const vector<Eigen::Vector3i> &triangles = mesh_ptr->triangles_;  // 顶点索引
     const vector<Eigen::Vector3d> &colors = mesh_ptr->vertex_colors_; // 顶点颜色
     int write_count = 0;
-    for (int i = 0; i < triangles.size(); i++) {
-        etrs::proto::Vertex *v1 = mesh_message->add_v1();
+    int triangle_size = triangles.size();
+    for (int i = 0; i < triangle_size; i++) {
+        etrs::proto::Vertex *v1 = point_cloud_message->add_v1();
         int v1_index = triangles[i][0];
         v1->set_x(vertices[v1_index][0]);
         v1->set_y(vertices[v1_index][1]);
         v1->set_z(vertices[v1_index][2]);
 
-        etrs::proto::Vertex *v2 = mesh_message->add_v2();
+        etrs::proto::Vertex *v2 = point_cloud_message->add_v2();
         int v2_index = triangles[i][1];
         v2->set_x(vertices[v2_index][0]);
         v2->set_y(vertices[v2_index][1]);
         v2->set_z(vertices[v2_index][2]);
 
-        etrs::proto::Vertex *v3 = mesh_message->add_v3();
+        etrs::proto::Vertex *v3 = point_cloud_message->add_v3();
         int v3_index = triangles[i][2];
         v3->set_x(vertices[v3_index][0]);
         v3->set_y(vertices[v3_index][1]);
         v3->set_z(vertices[v3_index][2]);
 
-        mesh_message->add_r((colors[v1_index][0] + colors[v2_index][0] + colors[v3_index][0]) / 3.0);
-        mesh_message->add_g((colors[v1_index][1] + colors[v2_index][1] + colors[v3_index][1]) / 3.0);
-        mesh_message->add_b((colors[v1_index][2] + colors[v2_index][2] + colors[v3_index][2]) / 3.0);
+        point_cloud_message->add_r((colors[v1_index][0] + colors[v2_index][0] + colors[v3_index][0]) / 3.0);
+        point_cloud_message->add_g((colors[v1_index][1] + colors[v2_index][1] + colors[v3_index][1]) / 3.0);
+        point_cloud_message->add_b((colors[v1_index][2] + colors[v2_index][2] + colors[v3_index][2]) / 3.0);
 
-        if ((i + 1) % interval == 0 || i == (triangles.size() - 1)) {
+        if ((i + 1) % interval == 0 || i == (triangle_size - 1)) {
             // unique_lock<mutex> lock(HoloCommunicator_mutex);
             sendMessage(data_message);
-            mesh_message->Clear();
+            point_cloud_message->Clear();
             write_count++;
         }
         Debug::CoutFlush("已发送：{}", write_count);
     }
-    Debug::CoutSection("发送完毕", "一共发送了 {} 次\n 面片数量 {} ", write_count, triangles.size());
+    Debug::CoutSection("发送完毕", "一共发送了 {} 次\n 面片数量 {} ", write_count, triangle_size);
     sendExitMeshMessage();
     return write_count;
 }
@@ -338,44 +321,45 @@ int HoloCommunicator::sendMessageFromMesh(open3d::geometry::TriangleMesh mesh, c
     }
     etrs::proto::DataMessage data_message;
     data_message.set_type(etrs::proto::DataMessage::MESH);
-    etrs::proto::Mesh *mesh_message = data_message.mutable_mesh();
+    etrs::proto::Mesh *point_cloud_message = data_message.mutable_mesh();
     const vector<Eigen::Vector3d> &vertices = mesh.vertices_;
     const vector<Eigen::Vector3i> &triangles = mesh.triangles_;
     const vector<Eigen::Vector3d> &colors = mesh.vertex_colors_;
 
     int write_count = 0;
-    for (int i = 0; i < triangles.size(); i++) {
-        etrs::proto::Vertex *v1 = mesh_message->add_v1();
+    int triangle_size = triangles.size();
+    for (int i = 0; i < triangle_size; i++) {
+        etrs::proto::Vertex *v1 = point_cloud_message->add_v1();
         int v1_index = triangles[i][0];
         v1->set_x(vertices[v1_index][0]);
         v1->set_y(vertices[v1_index][1]);
         v1->set_z(vertices[v1_index][2]);
 
-        etrs::proto::Vertex *v2 = mesh_message->add_v2();
+        etrs::proto::Vertex *v2 = point_cloud_message->add_v2();
         int v2_index = triangles[i][1];
         v2->set_x(vertices[v2_index][0]);
         v2->set_y(vertices[v2_index][1]);
         v2->set_z(vertices[v2_index][2]);
 
-        etrs::proto::Vertex *v3 = mesh_message->add_v3();
+        etrs::proto::Vertex *v3 = point_cloud_message->add_v3();
         int v3_index = triangles[i][2];
         v3->set_x(vertices[v3_index][0]);
         v3->set_y(vertices[v3_index][1]);
         v3->set_z(vertices[v3_index][2]);
 
-        mesh_message->add_r((colors[v1_index][0] + colors[v2_index][0] + colors[v3_index][0]) / 3.0);
-        mesh_message->add_g((colors[v1_index][1] + colors[v2_index][1] + colors[v3_index][1]) / 3.0);
-        mesh_message->add_b((colors[v1_index][2] + colors[v2_index][2] + colors[v3_index][2]) / 3.0);
+        point_cloud_message->add_r((colors[v1_index][0] + colors[v2_index][0] + colors[v3_index][0]) / 3.0);
+        point_cloud_message->add_g((colors[v1_index][1] + colors[v2_index][1] + colors[v3_index][1]) / 3.0);
+        point_cloud_message->add_b((colors[v1_index][2] + colors[v2_index][2] + colors[v3_index][2]) / 3.0);
 
-        if ((i + 1) % interval == 0 || i == (triangles.size() - 1)) {
+        if ((i + 1) % interval == 0 || i == (triangle_size - 1)) {
             // unique_lock<mutex> lock(HoloCommunicator_mutex);
             sendMessage(data_message);
-            mesh_message->Clear();
+            point_cloud_message->Clear();
             write_count++;
         }
         Debug::CoutFlush("已发送：{}", write_count);
     }
-    Debug::CoutSection("发送完毕", "一共发送了 {} 次\n 面片数量 {} ", write_count, triangles.size());
+    Debug::CoutSection("发送完毕", "一共发送了 {} 次\n 面片数量 {} ", write_count, triangle_size);
     sendExitMeshMessage();
     return write_count;
 }

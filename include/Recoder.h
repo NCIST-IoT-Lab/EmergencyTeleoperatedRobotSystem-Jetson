@@ -1,5 +1,5 @@
-#ifndef CASRECODER_H
-#define CASRECODER_H
+#ifndef _RECODER_H_
+#define _RECODER_H_
 
 #include <Utility.h>
 
@@ -19,4 +19,4 @@ namespace etrs::replay {
 
 } // namespace etrs::replay
 
-#endif // CASNETWORK_H
+#endif // _RECODER_H_
