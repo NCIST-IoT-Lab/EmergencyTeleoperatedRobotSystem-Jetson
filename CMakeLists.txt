@@ -30,20 +30,37 @@ protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_FILES})
 # OPEN3D
 find_package(Open3D REQUIRED)
 include_directories("/usr/local/include/open3d")
+include_directories("/usr/include/python3.8")
 
 # JSON
 find_package(jsoncpp REQUIRED)
 
-SET(EXECUTABLE_OUTPUT_PATH ../../../ETRS/bin)
+# Boost
+find_package(Boost REQUIRED COMPONENTS python)
+include_directories(${Boost_INCLUDE_DIRS})
+
+set(PYTHON_DOT_VERSION 3.8)
+set(PYTHON_INCLUDE /usr/include/python3.8)
+set(PYTHON_LIBRARY /usr/lib/python3.8/config-aarch64-linux-gnu)
+
+MESSAGE( STATUS "Boost_INCLUDE_DIRS = ${Boost_INCLUDE_DIRS}.")
+MESSAGE( STATUS "Boost_LIBRARIES = ${Boost_LIBRARIES}.")
+MESSAGE( STATUS "Boost_LIB_VERSION = ${Boost_LIB_VERSION}.")
+
+SET(EXECUTABLE_OUTPUT_PATH ../../../ETRS/det3d_bin)
 
 file(GLOB_RECURSE UTILITY src/utility/*.cpp)
+
+# 指定头文件目录
+include_directories(include)
+include_directories(include/utility)
 
 add_executable(EmergencyTeleoperatedRobotSystem
         src/EmergencyTeleoperatedRobotSystem.cpp 
         src/AzureKinectExtrinsics.cpp 
         src/SoundSourceLocalization.cpp
         src/AzureKinect.cpp 
-        # src/utility/Utility.cpp
+        src/PointCloud.cpp
         src/Bot.cpp
         src/Network.cpp
         src/Bluetooth.cpp
@@ -54,30 +71,13 @@ add_executable(EmergencyTeleoperatedRobotSystem
         ${PROTO_HDRS} 
         )
 
-add_executable(Recon
-        src/Recon.cpp 
-        src/AzureKinectExtrinsics.cpp 
-        src/SoundSourceLocalization.cpp
-        src/AzureKinect.cpp 
-        # src/utility/Utility.cpp
-        src/Bot.cpp
-        src/Network.cpp
-        src/Bluetooth.cpp
-        src/Device.cpp
-        src/Serial.cpp
-        ${UTILITY}
-        ${PROTO_SRCS} 
-        ${PROTO_HDRS} 
+add_executable(Boostt
+        src/Boostt.cpp 
         )
 
-target_link_libraries(Recon
-        k4a::k4a
-        ${Open3D_LIBRARIES}
-        ${Eigen3_LIBRARIES}
-        ${Protobuf_LIBRARIES}
-        asound
-        fftw3
-        bluetooth
+target_link_libraries(Boostt
+        ${Boost_LIBRARIES}
+        -lpython3.8
         )
 
 # add_executable(Compete
@@ -145,10 +145,6 @@ target_link_libraries(Reconstruction
 #         src/CasBot.cpp
 #         src/CasUtility.cpp
 #         )
-
-# 指定头文件目录
-include_directories(include)
-include_directories(include/utility)
 
 target_link_libraries(EmergencyTeleoperatedRobotSystem
         k4a::k4a
