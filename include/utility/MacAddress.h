@@ -2,8 +2,8 @@
 // Created by HoChihchou on 4/23/23.
 //
 
-#ifndef _MACADDRESS_H_
-#define _MACADDRESS_H_
+#ifndef _MAC_ADDRESS_H_
+#define _MAC_ADDRESS_H_
 
 #include <iostream>
 #include <regex>
@@ -19,4 +19,4 @@ namespace etrs::utility {
 
 } // namespace etrs::utility
 
-#endif // _MACADDRESS_H_
+#endif // _MAC_ADDRESS_H_

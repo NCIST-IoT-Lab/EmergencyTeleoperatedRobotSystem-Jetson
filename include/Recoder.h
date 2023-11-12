@@ -11,10 +11,10 @@ namespace etrs::replay {
         string file_path;
 
     public:
-        explict Recoder();
+        explicit Recoder();
         ~Recoder();
 
-        explict Recoder(const string file_path);
+        explicit Recoder(const string file_path);
     };
 
 } // namespace etrs::replay
