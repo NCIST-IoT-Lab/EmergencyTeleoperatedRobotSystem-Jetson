@@ -1,8 +1,8 @@
 syntax = "proto3";
 package etrs.proto;
 
-// ObjectDetection
-message ObjectDetection {
+// DetectionResult
+message DetectionResult{
     repeated Object objects = 1;
 }
 
@@ -18,9 +18,9 @@ message BoundingBox {
     float y = 2;
     float z = 3;
     // 长宽高
-    float width = 4;
-    float height = 5;
-    float length = 6;
+    float l = 4;
+    float w = 5;
+    float h = 6;
     // 旋转角度
     float yaw = 7;
 }
