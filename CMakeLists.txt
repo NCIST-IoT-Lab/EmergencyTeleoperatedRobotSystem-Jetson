@@ -70,6 +70,8 @@ add_executable(EmergencyTeleoperatedRobotSystem
         src/Bluetooth.cpp
         src/Device.cpp
         src/Serial.cpp
+        src/python_invoker/PythonInvoker.cpp
+        src/ObjectDetection.cpp
         ${UTILITY}
         ${PROTO_SRCS} 
         ${PROTO_HDRS} 
@@ -78,7 +80,6 @@ add_executable(EmergencyTeleoperatedRobotSystem
 add_executable(Boostt
         src/Boostt.cpp 
         src/python_invoker/PythonInvoker.cpp
-        src/python_invoker/TypeConverters.cpp
         ${UTILITY}
         )
 
@@ -154,9 +155,12 @@ target_link_libraries(EmergencyTeleoperatedRobotSystem
         ${Open3D_LIBRARIES}
         ${Eigen3_LIBRARIES}
         ${Protobuf_LIBRARIES}
+        ${Boost_LIBRARIES}
         asound
         fftw3
         bluetooth
+        -lpython3.8
+        -lpython2.7
         )
 
 # target_link_libraries(CasControlCar

@@ -1,12 +1,6 @@
 //
-// Created by Cassius0924 on 2020/03/03.
+// Created by Cassius0924 on 2023/03/03.
 //
-
-/*
- * SingleAzureKinect3DReconstruction
- * 此项目基于 Open3D 和 Azure Kinect DK 实现了三维重建。利用 Azure Kinect DK
- * 捕获图像并记录 IMU 数据，利用 Open3D 实现三维重建。
- */
 
 #include "AzureKinect.h"
 #include "AzureKinectExtrinsics.h"
@@ -14,7 +8,9 @@
 #include "Bot.h"
 #include "DataMessage.pb.h"
 #include "Network.h"
+#include "PointCloud.h"
 #include "SoundSourceLocalization.h"
+#include "ObjectDetection.h"
 #include "Utility.h"
 
 #include <iostream>
@@ -31,19 +27,6 @@ using namespace std;
 using namespace open3d;
 using namespace etrs::utility;
 
-void onRotated(etrs::utility::Config &config, string &FIRST_MOTOR_ROTATION) {
-    Debug::CoutSuccess("舵机旋转成功");
-    if (FIRST_MOTOR_ROTATION == "F") {
-        FIRST_MOTOR_ROTATION = "R";
-        config.set("first_motor_rotation", "R");
-    } else if (FIRST_MOTOR_ROTATION == "R") {
-        FIRST_MOTOR_ROTATION = "F";
-        config.set("first_motor_rotation", "F");
-    } else {
-        Debug::CoutError("未知的舵机旋转方向！");
-    }
-}
-
 int main(int argc, char **argv) {
     // 读取配置文件
     string config_file_path = "../default.conf";
@@ -58,10 +41,8 @@ int main(int argc, char **argv) {
     float FINAL_VOXEL_SIZE = program_config.getFloat("final_voxel_size");
     float SMALL_RADIUS_MULTIPLIER = program_config.getFloat("small_radius_multiplier");
     float LARGE_RADIUS_MULTIPLIER = program_config.getFloat("large_radius_multiplier");
-    // string WEB_SOCKET_SERVER_ADDRESS = program_config.get("web_socket_server_address");
-    // int WEB_SOCKET_SERVER_PORT = program_config.getInt("web_socket_server_port");
-    // string WEB_SOCKET_SERVER_PATH = program_config.get("web_socket_server_path");
-    bool IS_WRITE_FILE = program_config.getBool("is_write_file");
+    bool IS_WRITE_MESH_FILE = program_config.getBool("is_write_mesh_file");
+    bool IS_WRITE_POINT_CLOUD_FILE = program_config.getBool("is_write_point_cloud_file");
     string CLOUD_FILE_PATH = program_config.get("cloud_file_path");
     string MESH_FILE_PATH = program_config.get("mesh_file_path");
     bool IS_CREATE_SERVER = program_config.getBool("is_create_server");
@@ -69,6 +50,7 @@ int main(int argc, char **argv) {
     bool IS_CONNECT_KINECT = program_config.getBool("is_connect_kinect");
     bool ENABLE_SOUND_SOURCE_LOCALIZATION = program_config.getBool("enable_sound_source_localization");
     int SERVER_PORT = program_config.getInt("protobuf_server_port");
+    int PYTHON_PORT = program_config.getInt("python_port");
     unsigned int SAMPLE_RATE = program_config.getInt("sample_rate");
     int SAMPLES = program_config.getInt("samples");
     int CHANNELS = program_config.getInt("channels");
@@ -108,8 +90,6 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    // bot_motor.rotate(FIRST_MOTOR_ROTATION, [&]() { onRotated(program_config, FIRST_MOTOR_ROTATION); });
-
     // 打开（默认）设备
     // device = k4a::device::open(K4A_DEVICE_DEFAULT);
 
@@ -144,9 +124,11 @@ int main(int argc, char **argv) {
     // k4a_transformation_t k4a_transformation = k4a_transformation_create(&k4a_calibration);
 
     if (IS_CONNECT_ARM) {
-        bot_arm_left.reset();
-        bot_arm_right.reset();
-        Debug::CoutSuccess("机械臂复位成功");
+        if (bot_arm_left.reset() && bot_arm_right.reset()) {
+            Debug::CoutSuccess("机械臂复位成功");
+        } else {
+            Debug::CoutError("机械臂复位失败");
+        }
     }
 
     // thread receive_bot_arm_thread([&]() {
@@ -202,22 +184,21 @@ int main(int argc, char **argv) {
     bot_led.setLedColor(etrs::bot::BotLed::LedColor::RED);
 
     // 创建服务器等待连接
-    etrs::net::HoloCommunicator client(SERVER_PORT);
-    client.createServerSocket();
-    client.acceptConnection([&]() {
-        // LED亮绿
+    etrs::net::HoloCommunicator holocom(SERVER_PORT);
+    holocom.createServerSocket();
+    holocom.acceptConnection([&]() {
         bot_led.setLedColor(etrs::bot::BotLed::LedColor::GREEN);
         Debug::CoutSuccess("HoloCommunicator 连接成功");
     });
 
-    etrs::net::HoloCommunicator client1(SERVER_PORT, client.server_socket_fd);
-    // client1.createServerSocket();
-    // client1.acceptConnection([&]() {
+    // etrs::net::HoloCommunicator holocom1(SERVER_PORT, holocom.server_socket_fd);
+    // holocom1.createServerSocket();
+    // holocom1.acceptConnection([&]() {
     //     Debug::CoutSuccess("HoloCommunicator 2 连接成功");
     // });
 
     // 定义互斥锁
-    mutex client_mutex;
+    mutex holocom_mutex;
     mutex stm32_mutex;
     mutex recon_mutex;
 
@@ -227,7 +208,6 @@ int main(int argc, char **argv) {
     bool kinect_going = true;
 
     // TODO: 实时模式，留给下一届吧
-    // etrs::proto::KinectMode::Mode kinect_mode = etrs::proto::KinectMode::REAL_TIME;
     etrs::proto::KinectMode::Mode kinect_mode = etrs::proto::KinectMode::RECONSTRCUTION;
 
     int angle = 90;
@@ -247,30 +227,25 @@ int main(int argc, char **argv) {
     //             sound_source_message->set_y(sound_source[1]);
     //             sound_source_message->set_z(sound_source[2]);
     //             Debug::CoutInfo("声源位置: {}, {}, {}", sound_source[0], sound_source[1], sound_source[2]);
-    //             client.sendMessage(data_message);
+    //             holocom.sendMessage(data_message);
     //         }
     //     }
     // });
 
-    thread receive_client_thread([&]() {
-        char client_buffer[1024];
+    thread receive_holocom_thread([&]() {
+        char holocom_buffer[1024];
         while (true) {
             etrs::proto::DataMessage data_message;
-            if (!client.recvMessage(data_message)) {
+            if (!holocom.recvMessage(data_message)) {
                 continue;
             }
             switch ((int)data_message.type()) {
                 case (int)etrs::proto::DataMessage::BOT_MOTOR: {
                     Debug::CoutSuccess("收到重建请求");
                     angle = data_message.bot_motor().angle(); // TODO: 保证angle为2的倍数
-                    // if (angle == 90) {
                     unique_lock<mutex> lock(recon_mutex);
                     flag_recording = 0;
                     need_reconnstrcution = true;
-                    // } else if (angle == 360) {
-                    //     bot_motor.rotate(FIRST_MOTOR_ROTATION, 360, MOTOR_SPEED,
-                    //                      [&]() { onRotated(program_config, FIRST_MOTOR_ROTATION); });
-                    // }
                     break;
                 }
                 case (int)etrs::proto::DataMessage::BOT_CAR: {
@@ -355,11 +330,11 @@ int main(int argc, char **argv) {
             // 等待接受到stm32的数据
             bot_motor.recvData(stm32_buffer, 32);
             char data_type = stm32_buffer[0];
-            // Debug::CoutDebug("OKOKOK，STM32: {}", data_type);
-            // 解析stm32数据
+
             switch (data_type) {
                 case 'M':
                 case 'm': {
+                    // TODO: 字符串判断这个也可以封装
                     if ((stm32_buffer[4] == 'd' || stm32_buffer[4] == 'D') &&
                         (stm32_buffer[5] == 'o' || stm32_buffer[5] == 'O') &&
                         (stm32_buffer[6] == 'n' || stm32_buffer[6] == 'N') &&
@@ -381,8 +356,8 @@ int main(int argc, char **argv) {
                     etrs::proto::TempAndHumi *temp_and_humi = data_message.mutable_temp_and_humi();
                     temp_and_humi->set_humi(humi);
                     temp_and_humi->set_temp(temp);
-                    // unique_lock<mutex> lock(client_mutex);
-                    client.sendMessage(data_message);
+                    // unique_lock<mutex> lock(holocom_mutex);
+                    holocom.sendMessage(data_message);
                     break;
                 }
             }
@@ -407,11 +382,6 @@ int main(int argc, char **argv) {
     // 设备类型
     core::Device cuda_ = core::Device("cuda:0");
 
-    geometry::TriangleMesh llm;
-    // io::ReadTriangleMesh("ply/sm.ply", llm);
-    Debug::CoutDebug("开始发送数据");
-    client.sendMessageFromMesh(llm, 800);
-
     if (!IS_CONNECT_KINECT) {
         while (true)
             ;
@@ -424,231 +394,134 @@ int main(int argc, char **argv) {
 
     while (true) {
         kinect_going = true;
-        switch (kinect_mode) {
-            case etrs::proto::KinectMode::RECONSTRCUTION: {
-                Debug::CoutInfo("切换至重建模式");
-                core::Tensor intrinsic_t =
-                    core::Tensor::Init<double>({{963.205, 0, 1012.87}, {0, 962.543, 777.369}, {0, 0, 1}});
+        core::Tensor intrinsic_t =
+            core::Tensor::Init<double>({{963.205, 0, 1012.87}, {0, 962.543, 777.369}, {0, 0, 1}});
 
-                while (kinect_going) {
-                    if (!need_reconnstrcution) {
-                        continue;
-                    }
-
-                    need_reconnstrcution = false;
-
-                    bot_motor.rotate(-angle / 2, 3000, [&]() { onRotated(program_config, FIRST_MOTOR_ROTATION); });
-                    this_thread::sleep_for(chrono::seconds(5));
-                    bot_motor.rotate(angle, 10000, [&]() { onRotated(program_config, FIRST_MOTOR_ROTATION); });
-                    this_thread::sleep_for(chrono::seconds(15));
-                    bot_motor.rotate(-angle / 2, 3000, [&]() { onRotated(program_config, FIRST_MOTOR_ROTATION); });
-
-                    if (0) {
-                        this_thread::sleep_for(chrono::seconds(2));
-                        bot_motor.rotate(-angle / 2, 3000, [&]() { onRotated(program_config, FIRST_MOTOR_ROTATION); });
-
-                        while (flag_recording < 1)
-                            ;
-                        // device.close();
-
-                        sensor.Connect(0);
-                        Debug::CoutSuccess("相机初始化成功");
-
-                        std::shared_ptr<geometry::RGBDImage> im_rgbd;
-
-                        // 读取第一个有效帧
-                        do {
-                            im_rgbd = sensor.CaptureFrame(true);
-                        } while (im_rgbd == nullptr);
-
-                        // 初始化 SLAM 模型
-                        core::Tensor T_frame_to_model =
-                            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
-                        t::pipelines::slam::Model model(voxel_size, block_resolution, block_count, T_frame_to_model,
-                                                        cuda_);
-
-                        t::pipelines::slam::Frame input_frame(im_rgbd->depth_.height_, im_rgbd->depth_.width_,
-                                                              intrinsic_t, cuda_);
-                        t::pipelines::slam::Frame raycast_frame(im_rgbd->depth_.height_, im_rgbd->depth_.width_,
-                                                                intrinsic_t, cuda_);
-
-                        int i = 0;
-
-                        // 旋转电机
-                        bot_motor.rotate(angle, MOTOR_SPEED,
-                                         [&]() { onRotated(program_config, FIRST_MOTOR_ROTATION); });
-                        while (flag_recording < 2) {
-                            im_rgbd = sensor.CaptureFrame(true);
-                            if (im_rgbd == nullptr) { // 读取失败则跳过
-                                continue;
-                            }
-
-                            Debug::CoutInfo("处理中: {}", i);
-
-                            input_frame.SetDataFromImage("depth",
-                                                         t::geometry::Image::FromLegacy(im_rgbd->depth_, cuda_));
-                            input_frame.SetDataFromImage("color",
-                                                         t::geometry::Image::FromLegacy(im_rgbd->color_, cuda_));
-
-                            // 里程计跟踪
-                            bool tracking_success = true;
-
-                            if (i > 0) {
-                                t::pipelines::odometry::OdometryResult result;
-                                try {
-                                    result = model.TrackFrameToModel(input_frame, raycast_frame, depth_scale, depth_max,
-                                                                     depth_diff);
-                                    // TODO: 打印 result.transformation_
-                                    // 的值，看看位移值是否为0，再比较一下旋转值和IMU获取的旋转值是否一致？
-
-                                    core::Tensor t1 =
-                                        etrs::utility::Transformation::RemoveYTranslationT(result.transformation_);
-
-                                    // string d = FIRST_MOTOR_ROTATION == "F" ? "R" : "F";
-                                    core::Tensor t2 = etrs::utility::Transformation::RemoveXZRotationT(t1, "F");
-                                    double translation_norm =
-                                        etrs::utility::Transformation::CalculateTranslationNormT(t2);
-
-                                    if (translation_norm < 0.15) {
-                                        T_frame_to_model = T_frame_to_model.Matmul(t2);
-                                    } else {
-                                        tracking_success = false;
-                                        Debug::CoutError("里程计跟踪失败！");
-                                    }
-                                    // Debug::CoutInfo("fitness: {}， translation_norm: {}", result.fitness_,
-                                    // translation_norm);
-
-                                } catch (const runtime_error &e) {
-                                    Debug::CoutError("{}", e.what());
-                                    tracking_success = false;
-                                    --i;
-                                }
-                            }
-
-                            if (tracking_success) {
-                                model.UpdateFramePose(i, T_frame_to_model);
-                                model.Integrate(input_frame, depth_scale, depth_max, trunc_voxel_multiplier);
-                                model.SynthesizeModelFrame(raycast_frame, depth_scale, 0.1, depth_max,
-                                                           trunc_voxel_multiplier, false);
-                                i++;
-                            }
-                        }
-                        sensor.Disconnect();
-
-                        // TODO: tensor旋转是否可用?
-                        core::Tensor rotate_tensor = open3d::core::eigen_converter::EigenMatrixToTensor(
-                            Eigen::AngleAxisd(-(angle / 2) / 180.0 * M_PI, Eigen::Vector3d(0, 1, 0))
-                                .toRotationMatrix());
-                        core::Tensor center_tensor =
-                            core::Tensor::Zeros({3}, core::Dtype::Float64, core::Device("CPU:0"));
-                        auto mesh = model.ExtractTriangleMesh().Rotate(rotate_tensor, center_tensor);
-                        // 点云数据
-                        // auto point_cloud = model.ExtractPointCloud();
-                        auto legacy_mesh = mesh.ToLegacy();
-                    }
-
-                    // FIXME:
-                    // 发送面片数据
-                    // Debug::CoutDebug("保存面片数据中");
-                    // io::WriteTriangleMesh("ply/sm.ply", legacy_mesh);
-
-                    geometry::TriangleMesh legacy_mesh1;
-                    io::ReadTriangleMesh("ply/sm.ply", legacy_mesh1);
-
-                    // bot_motor.rotate(-angle / 2, 3000, [&]() { onRotated(program_config, FIRST_MOTOR_ROTATION); });
-                    // while (flag_recording < 3)
-                    //     ;
-
-                    Debug::CoutDebug("开始发送数据");
-                    client.sendMessageFromMesh(legacy_mesh1, 800);
-                    // client1.sendMessageFromMesh(legacy_mesh1, 800);
-                }
-                break;
+        while (kinect_going) {
+            if (!need_reconnstrcution) {
+                continue;
             }
-            case etrs::proto::KinectMode::REAL_TIME: {
-                Debug::CoutInfo("切换至实时模式");
-                while (kinect_going) {
-                    // FIXME:
-                    // sensor.Disconnect();
+            need_reconnstrcution = false;
 
-                    open3d::geometry::PointCloud cloud;
+            t::geometry::PointCloud point_cloud;
 
-                    k4a::capture capture;
-                    device.get_capture(&capture);
+            bot_motor.rotate(-angle / 2, 3000);
 
-                    k4a::image rgb_image_item = capture.get_color_image();
-                    k4a::image depth_image_item = capture.get_depth_image();
+            while (flag_recording < 1)
+                ;
+            // device.close();
 
-                    int color_image_width_pixels = rgb_image_item.get_width_pixels();
-                    int color_image_height_pixels = rgb_image_item.get_height_pixels();
+            sensor.Connect(0);
+            Debug::CoutSuccess("相机初始化成功");
 
-                    k4a::image transformed_depthImage =
-                        k4a::image::create(K4A_IMAGE_FORMAT_DEPTH16, color_image_width_pixels,
-                                           color_image_height_pixels, color_image_width_pixels * (int)sizeof(uint16_t));
-                    k4a::image point_cloud_image =
-                        k4a::image::create(K4A_IMAGE_FORMAT_CUSTOM, color_image_width_pixels, color_image_height_pixels,
-                                           color_image_width_pixels * 3 * (int)sizeof(int16_t));
+            std::shared_ptr<geometry::RGBDImage> im_rgbd;
 
-                    // k4a_transformation.depth_image_to_color_camera(depth_image_item, &transformed_depthImage);
+            // 读取第一个有效帧
+            do {
+                im_rgbd = sensor.CaptureFrame(true);
+            } while (im_rgbd == nullptr);
 
-                    // k4a_transformation.depth_image_to_point_cloud(transformed_depthImage,
-                    // K4A_CALIBRATION_TYPE_COLOR, &point_cloud_image);
+            // 初始化 SLAM 模型
+            core::Tensor T_frame_to_model = core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
+            t::pipelines::slam::Model model(voxel_size, block_resolution, block_count, T_frame_to_model, cuda_);
 
-                    cloud.points_.resize(color_image_width_pixels * color_image_height_pixels);
-                    cloud.colors_.resize(color_image_width_pixels * color_image_height_pixels);
+            t::pipelines::slam::Frame input_frame(im_rgbd->depth_.height_, im_rgbd->depth_.width_, intrinsic_t, cuda_);
+            t::pipelines::slam::Frame raycast_frame(im_rgbd->depth_.height_, im_rgbd->depth_.width_, intrinsic_t,
+                                                    cuda_);
 
-                    const int16_t *point_cloud_image_data =
-                        reinterpret_cast<const int16_t *>(point_cloud_image.get_buffer());
-                    const uint8_t *color_image_data = rgb_image_item.get_buffer();
+            int i = 0;
 
-                    for (int i = 0; i < color_image_width_pixels * color_image_height_pixels; i++) {
-                        if (point_cloud_image_data[3 * i + 0] != 0 && point_cloud_image_data[3 * i + 1] != 0 &&
-                            point_cloud_image_data[3 * i + 2] != 0) {
-                            cloud.points_[i] = Eigen::Vector3d(point_cloud_image_data[3 * i + 0] / 1000.0f,
-                                                               point_cloud_image_data[3 * i + 1] / 1000.0f,
-                                                               point_cloud_image_data[3 * i + 2] / 1000.0f);
-                            cloud.colors_[i] = Eigen::Vector3d(color_image_data[4 * i + 2] / 255.0f,
-                                                               color_image_data[4 * i + 1] / 255.0f,
-                                                               color_image_data[4 * i + 0] / 255.0f);
+            // 旋转电机
+            bot_motor.rotate(angle, MOTOR_SPEED);
+            while (flag_recording < 2) {    //TODO: 封装
+                im_rgbd = sensor.CaptureFrame(true);
+                if (im_rgbd == nullptr) { // 读取失败则跳过
+                    continue;
+                }
+
+                Debug::CoutInfo("处理中: {}", i);
+
+                input_frame.SetDataFromImage("depth", t::geometry::Image::FromLegacy(im_rgbd->depth_, cuda_));
+                input_frame.SetDataFromImage("color", t::geometry::Image::FromLegacy(im_rgbd->color_, cuda_));
+
+                // 里程计跟踪
+                bool tracking_success = true;
+
+                if (i > 0) {
+                    t::pipelines::odometry::OdometryResult result;
+                    try {
+                        result =
+                            model.TrackFrameToModel(input_frame, raycast_frame, depth_scale, depth_max, depth_diff);
+                        // TODO: 打印 result.transformation_
+                        // 的值，看看位移值是否为0，再比较一下旋转值和IMU获取的旋转值是否一致？
+
+                        core::Tensor t1 = etrs::utility::Transformation::RemoveYTranslationT(result.transformation_);
+
+                        // string d = FIRST_MOTOR_ROTATION == "F" ? "R" : "F";
+                        core::Tensor t2 = etrs::utility::Transformation::RemoveXZRotationT(t1, "F");
+                        double translation_norm = etrs::utility::Transformation::CalculateTranslationNormT(t2);
+
+                        if (translation_norm < 0.15) {
+                            T_frame_to_model = T_frame_to_model.Matmul(t2);
                         } else {
-                            cloud.points_[i] = Eigen::Vector3d::Zero();
-                            cloud.colors_[i] = Eigen::Vector3d::Zero();
+                            tracking_success = false;
+                            Debug::CoutWarning("里程计跟踪失败！");
                         }
+                        // Debug::CoutInfo("fitness: {}， translation_norm: {}", result.fitness_,
+                        // translation_norm);
+
+                    } catch (const runtime_error &e) {
+                        Debug::CoutError("{}", e.what());
+                        tracking_success = false;
+                        --i;
                     }
-
-                    // k4a::capture capture;
-
-                    // Debug::CoutDebug("实时 1 帧");
-                    // 将iamge转点云
-                    // auto cloud = *geometry::PointCloud::CreateFromRGBDImage(
-                    //     *image, camera::PinholeCameraIntrinsic(
-                    //                 camera::PinholeCameraIntrinsicParameters::Kinect2DepthCameraDefault));
-
-                    auto point_cloud = *cloud.VoxelDownSample(0.03);
-
-                    geometry::KDTreeSearchParamHybrid kd_tree_param(0.03 * 2, 30);
-
-                    point_cloud.EstimateNormals(kd_tree_param);
-
-                    // point_cloud转mesh
-                    vector<double> distances = point_cloud.ComputeNearestNeighborDistance();
-                    // 计算平均距离
-                    double avg_dist = accumulate(distances.begin(), distances.end(), 0.0) / distances.size();
-                    // 设置搜索半径
-                    double radius = avg_dist * LARGE_RADIUS_MULTIPLIER;
-                    vector<double> radii = {radius, radius * 2};
-                    auto mesh = geometry::TriangleMesh::CreateFromPointCloudBallPivoting(point_cloud, radii);
-
-                    Debug::CoutDebug("开始发送数据");
-                    client.sendMessageFromMesh(mesh, 800);
                 }
-                break;
+
+                if (tracking_success) {
+                    model.UpdateFramePose(i, T_frame_to_model);
+                    model.Integrate(input_frame, depth_scale, depth_max, trunc_voxel_multiplier);
+                    model.SynthesizeModelFrame(raycast_frame, depth_scale, 0.1, depth_max, trunc_voxel_multiplier,
+                                               false);
+                    i++;
+                }
             }
-            default: {
-                Debug::CoutError("未知的 Kinect 模式");
-                break;
+            sensor.Disconnect();
+
+            // TODO: 使用MathUtils静态函数
+            core::Tensor rotate_tensor = open3d::core::eigen_converter::EigenMatrixToTensor(
+                Eigen::AngleAxisd(-(angle / 2) / 180.0 * M_PI, Eigen::Vector3d(0, 1, 0)).toRotationMatrix());
+            core::Tensor center_tensor =
+                core::Tensor::Zeros({3}, core::Dtype::Float64, core::Device("CPU:0")); // FIXME:  能否改成 CDUA:0
+            auto mesh = model.ExtractTriangleMesh().Rotate(rotate_tensor, center_tensor).ToLegacy();
+            // 为目标检测预处理点云，包括下采样，旋转。
+            point_cloud = model.ExtractPointCloud();
+
+            // FIXME:
+            // 发送面片数据
+            if (IS_WRITE_MESH_FILE) {
+                Debug::CoutDebug("保存面片数据中");
+                io::WriteTriangleMesh("ply/sm.ply", mesh);
             }
+
+            bot_motor.rotate(-angle / 2, 3000);
+            while (flag_recording < 3)
+                ;
+
+            std::thread t([&]() {
+                Debug::CoutDebug("开始发送数据");
+                holocom.sendMessageFromMesh(mesh, 800);
+            });
+            t.detach();
+
+            etrs::pcd::PointCloud::DownSamplePointCloud(point_cloud, VOXEL_SIZE);
+            etrs::pcd::PointCloud::RotatePointCloud(point_cloud, etrs::pcd::Axis::X, 90);
+            etrs::det3d::ObjectDetector object_detector;
+            DetectionResultType detection_result = object_detector.detectObjects(point_cloud.ToLegacy().points_);
+            holocom.sendMessageFromDetectionResult(detection_result);
+            
+
         }
+        break;
     }
 
     return 1;

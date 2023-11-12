@@ -170,44 +170,44 @@ bool BaseCommunicator::recvMessage(etrs::proto::DataMessage &message) {
  * PythonCommunicator
  * 用于与本地 Python 进程通信
  */
-PythonCommunicator::~PythonCommunicator() {}
+// PythonCommunicator::~PythonCommunicator() {}
 
-PythonCommunicator::PythonCommunicator(const int port) : BaseCommunicator(port) {
-    this->debug_messages.updateMessages(DebugMessages({{"wait_connection", "等待 Python 进程连接..."},
-                                                       {"connect_success", "Python 进程连接成功"},
-                                                       {"connect_failed", "Python 进程连接失败"}}));
-}
+// PythonCommunicator::PythonCommunicator(const int port) : BaseCommunicator(port) {
+//     this->debug_messages.updateMessages(DebugMessages({{"wait_connection", "等待 Python 进程连接..."},
+//                                                        {"connect_success", "Python 进程连接成功"},
+//                                                        {"connect_failed", "Python 进程连接失败"}}));
+// }
 
-int PythonCommunicator::sendMessageFromPointCloud(open3d::geometry::PointCloud point_cloud, const int interval) {
-    if (point_cloud.IsEmpty()) {
-        Debug::CoutError("Point cloud 为空");
-        return -1;
-    }
-    etrs::proto::DataMessage data_message;
-    data_message.set_type(etrs::proto::DataMessage::POINT_CLOUD);
-    etrs::proto::PointCloud *point_cloud_message = data_message.mutable_point_cloud();
-    const vector<Eigen::Vector3d> &points = point_cloud.points_;
+// int PythonCommunicator::sendMessageFromPointCloud(open3d::geometry::PointCloud point_cloud, const int interval) {
+//     if (point_cloud.IsEmpty()) {
+//         Debug::CoutError("Point cloud 为空");
+//         return -1;
+//     }
+//     etrs::proto::DataMessage data_message;
+//     data_message.set_type(etrs::proto::DataMessage::POINT_CLOUD);
+//     etrs::proto::PointCloud *point_cloud_message = data_message.mutable_point_cloud();
+//     const vector<Eigen::Vector3d> &points = point_cloud.points_;
 
-    int write_count = 0;
-    int point_size = points.size();
-    for (int i = 0; i < point_size; i++) {
-        etrs::proto::Point *p = point_cloud_message->add_points();
-        p->set_x(points[i][0]);
-        p->set_y(points[i][1]);
-        p->set_z(points[i][2]);
+//     int write_count = 0;
+//     int point_size = points.size();
+//     for (int i = 0; i < point_size; i++) {
+//         etrs::proto::Point *p = point_cloud_message->add_points();
+//         p->set_x(points[i][0]);
+//         p->set_y(points[i][1]);
+//         p->set_z(points[i][2]);
 
-        if ((i + 1) % interval == 0 || i == (point_size - 1)) {
-            // unique_lock<mutex> lock(PythonCommunicator_mutex);
-            sendMessage(data_message);
-            point_cloud_message->Clear();
-            write_count++;
-        }
-        Debug::CoutFlush("已发送：{}", write_count);
-    }
-    Debug::CoutSection("发送完毕", "一共发送了 {} 次\n 面片数量 {} ", write_count, point_size);
-    // sendExitMeshMessage();
-    return write_count;
-}
+//         if ((i + 1) % interval == 0 || i == (point_size - 1)) {
+//             // unique_lock<mutex> lock(PythonCommunicator_mutex);
+//             sendMessage(data_message);
+//             point_cloud_message->Clear();
+//             write_count++;
+//         }
+//         Debug::CoutFlush("已发送：{}", write_count);
+//     }
+//     Debug::CoutSection("发送完毕", "一共发送了 {} 次\n 面片数量 {} ", write_count, point_size);
+//     // sendExitMeshMessage();
+//     return write_count;
+// }
 
 /**
  * HoloCommunicator
@@ -362,4 +362,24 @@ int HoloCommunicator::sendMessageFromMesh(open3d::geometry::TriangleMesh mesh, c
     Debug::CoutSection("发送完毕", "一共发送了 {} 次\n 面片数量 {} ", write_count, triangle_size);
     sendExitMeshMessage();
     return write_count;
+}
+
+int HoloCommunicator::sendMessageFromDetectionResult(DetectionResultType detection_result) {
+    etrs::proto::DataMessage data_message;
+    data_message.set_type(etrs::proto::DataMessage::DETECTION_RESULT);
+    etrs::proto::DetectionResult *detection_result_message = data_message.mutable_detection_result();
+    for (auto item : detection_result) {
+        etrs::proto::Object *object = detection_result_message->add_objects();
+        object->set_label(item.label);
+        object->set_score(item.score);
+        etrs::proto::BoundingBox *bbox = object->mutable_bbox();
+        bbox->set_x(item.bbox.x);
+        bbox->set_y(item.bbox.y);
+        bbox->set_z(item.bbox.z);
+        bbox->set_l(item.bbox.l);
+        bbox->set_w(item.bbox.w);
+        bbox->set_h(item.bbox.h);
+        bbox->set_yaw(item.bbox.yaw);
+    }
+    return sendMessage(data_message);
 }

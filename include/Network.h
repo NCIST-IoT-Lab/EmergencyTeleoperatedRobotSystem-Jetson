@@ -4,6 +4,7 @@
 
 #include "Utility.h"
 #include "DataMessage.pb.h"
+#include "Types.h"
 
 #include <iostream>
 #include <arpa/inet.h>
@@ -52,17 +53,17 @@ namespace etrs::net {
     };
     
 
-    class PythonCommunicator : public BaseCommunicator {
-    private:
+    // class PythonCommunicator : public BaseCommunicator {
+    // private:
 
-    public:
-        explicit PythonCommunicator(const int port);
-        ~PythonCommunicator();
-        int sendMessageFromPointCloud(open3d::geometry::PointCloud point_cloud, const int interval);
-        // int sendMessageFromMesh(std::shared_ptr<open3d::geometry::TriangleMesh> mesh_ptr, const int interval);
+    // public:
+    //     explicit PythonCommunicator(const int port);
+    //     ~PythonCommunicator();
+    //     int sendMessageFromPointCloud(open3d::geometry::PointCloud point_cloud, const int interval);
+    //     // int sendMessageFromMesh(std::shared_ptr<open3d::geometry::TriangleMesh> mesh_ptr, const int interval);
     
-    private:
-    };
+    // private:
+    // };
 
 
     class HoloCommunicator : public BaseCommunicator {
@@ -80,6 +81,7 @@ namespace etrs::net {
         // TODO: 两个函数的函数体可以合并
         int sendMessageFromMesh(std::shared_ptr<open3d::geometry::TriangleMesh> mesh_ptr, const int interval);
         int sendMessageFromMesh(open3d::geometry::TriangleMesh mesh, const int interval);
+        int sendMessageFromDetectionResult(DetectionResultType detection_result);
     };
 
 } // namespace etrs::net

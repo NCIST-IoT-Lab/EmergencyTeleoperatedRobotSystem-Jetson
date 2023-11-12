@@ -1,44 +1,57 @@
 //
-// Created by root on 4/7/23.
+// Created by HoChihchou on 2023/11/06
 //
 
-#ifndef SMALL_AZURE_KINECT_DK_3D_RECONSTRUCTION_REGISTRATION_H
-#define SMALL_AZURE_KINECT_DK_3D_RECONSTRUCTION_REGISTRATION_H
+#ifndef _POINT_CLOUD_H_
+#define _POINT_CLOUD_H_
 
-#include <open3d/Open3D.h>
-#include <k4a/k4a.h>
-#include <iostream>
 #include <Utility.h>
 
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+#include <open3d/Open3D.h>
+
+using namespace std;
 using namespace etrs::utility;
+using namespace open3d;
 
-namespace etrs{
-    //open3d数据
-    namespace o3d {
+namespace etrs::pcd {
+    // 给RotatePointCloud的坐标轴
+    enum Axis { X, Y, Z };
 
-        // 点云配准
-        void registration(std::shared_ptr<open3d::geometry::PointCloud> source,
-                          std::shared_ptr<open3d::geometry::PointCloud> target);
+    class PointCloud {
+    public:
+        // static void PreProcessPointCloud();
 
-        // 点云相加
-        void add(std::shared_ptr<open3d::geometry::PointCloud> source,
-                  std::shared_ptr<open3d::geometry::PointCloud> target);
+        // 下采样点云
+        template <typename T>
+        static void DownSamplePointCloud(T &point_cloud, float voxel_size);
 
-        // 保存文件
-        void save(std::shared_ptr<open3d::geometry::PointCloud> source,
-                  std::string filename);
+        template <typename T>
+        static void RotatePointCloud(T &point_cloud, Axis axis, float angle);
 
-        // 点云可视化
-        void show(std::shared_ptr<open3d::geometry::PointCloud> source);
+        // TODO: 提取出来，让Mesh类也能用
+        // 绕任意轴旋转
+        template <typename T>
+        static T GetRotationMatrix(float angle, Eigen::Vector3d axis_vector);
 
-        // k4a_image_t转open3d点云
-        void k4a_image_to_o3d_point_cloud(k4a_image_t image, std::shared_ptr<open3d::geometry::PointCloud> point_cloud);
-    }
+        // 绕X轴旋转
+        template <typename T>
+        static T GetRotationMatrixX(float angle);
 
-    //pcl数据
-    namespace pcl{
-        // TODO:PCL点云格式转Open3D点云格式
-    }
-}
+        // 绕Y轴旋转
+        template <typename T>
+        static T GetRotationMatrixY(float angle);
 
-#endif //SMALL_AZURE_KINECT_DK_3D_RECONSTRUCTION_REGISTRATION_H
+        // 绕Z轴旋转
+        template <typename T>
+        static T GetRotationMatrixZ(float angle);
+
+        // 将点云数量微调到某个值的倍数（删点）
+        template <typename T>
+        static void AdjustPointCloudNum(T &point_cloud, int num_multiple);
+
+    };
+} // namespace etrs::pcd
+
+#endif //_POINT_CLOUD_H_

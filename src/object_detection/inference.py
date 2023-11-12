@@ -1,8 +1,9 @@
 ''' ETRS
     推理点云
 '''
+
 from mmdet3d.apis import init_model, inference_detector
-from mmdet3d.structures import Det3DDataSample
+from mmdet3d.structures import Det3DDataSample, DepthInstance3DBoxes
 import numpy as np
 from typing import Tuple, List
 

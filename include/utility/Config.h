@@ -30,6 +30,7 @@ namespace etrs::utility {
 
         explicit Config(const string config_path, const char comment_char = COMMENT_CHAR);
 
+        // TODO: 改重载[]运算符
         string get(const string key);
 
         float getFloat(const string key);

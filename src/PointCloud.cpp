@@ -5,120 +5,120 @@
 #include "PointCloud.h"
 
 #include <iostream>
-#include <vector>
 
-#include <open3d/Open3D.h>
-#include <open3d/io/PointCloudIO.h>
-#include <open3d/geometry/PointCloud.h>
-#include <open3d/pipelines/registration/Registration.h>
-#include <open3d/pipelines/registration/TransformationEstimation.h>
+using namespace etrs;
 
-#include <Eigen/Core>
+// void pcd::PointCloud::PreProcessPointCloud() {}
 
-using namespace std;
+// void pcd::PointCloud::RotatePointCloud(geometry::PointCloud &point_cloud, pcd::Axis axis, float angle) {
 
-void etrs::o3d::registration(std::shared_ptr<open3d::geometry::PointCloud> source, std::shared_ptr<open3d::geometry::PointCloud> target) {
-
-    double threshold = 1.0; // 移动范围的阀值
-    Eigen::Matrix4d trans_init = Eigen::Matrix4d::Identity(); // 4x4 identity matrix，这是一个转换矩阵，象征着没有任何位移，没有任何旋转，我们输入这个矩阵为初始变换
-
-    // 运行ICP
-    open3d::pipelines::registration::RegistrationResult reg_p2p;
-    reg_p2p = open3d::pipelines::registration::RegistrationICP(
-            *source, *target, threshold, trans_init,
-            open3d::pipelines::registration::TransformationEstimationPointToPoint());
-
-    // 将我们的点云依照输出的变换矩阵进行变换
-    source->Transform(reg_p2p.transformation_);
-}
-
-
-void etrs::o3d::add(std::shared_ptr<open3d::geometry::PointCloud> source, std::shared_ptr<open3d::geometry::PointCloud> target){
-    *source += *target;
-}
-
-void etrs::o3d::save(std::shared_ptr<open3d::geometry::PointCloud> source, std::string path){
-    open3d::io::WritePointCloud(path, *source);
-}
-
-void etrs::o3d::show(std::shared_ptr<open3d::geometry::PointCloud> source){
-    std::vector<std::shared_ptr<const open3d::geometry::Geometry>> geometries;
-    geometries.push_back(source);
-
-    // 使用 `DrawGeometries()` 函数来显示点云
-    open3d::visualization::DrawGeometries(geometries);
-}
-
-void etrs::o3d::k4a_image_to_o3d_point_cloud(const k4a_image_t point_cloud_image,std::shared_ptr<open3d::geometry::PointCloud> point_cloud) {
-    int width = k4a_image_get_width_pixels(point_cloud_image);
-    int height = k4a_image_get_height_pixels(point_cloud_image);
-
-    k4a_float3_t *point_cloud_data = (k4a_float3_t *) (void *) k4a_image_get_buffer(point_cloud_image);
-
-    std::vector<Eigen::Vector3d> points;    // 用于存储点云数据
-    for (int i = 0; i < width * height; i++) {
-        if (isnan(point_cloud_data[i].xyz.x) || isnan(point_cloud_data[i].xyz.y) || isnan(point_cloud_data[i].xyz.z)) {
-            continue;
-        }
-        points.push_back(Eigen::Vector3d(point_cloud_data[i].xyz.x, point_cloud_data[i].xyz.y, point_cloud_data[i].xyz.z));
+template <typename T>
+void pcd::PointCloud::DownSamplePointCloud(T &point_cloud, float voxel_size) {
+    if (voxel_size <= 0) {
+        Debug::CoutError("DownSamplePointCloud: voxel_size 必须大于 0");
+        return;
     }
-    point_cloud->points_ = points;
-    //颜色
-    std::vector<Eigen::Vector3d> colors;
-    for (int i = 0; i < width * height; i++) {
-        if (isnan(point_cloud_data[i].xyz.x) || isnan(point_cloud_data[i].xyz.y) || isnan(point_cloud_data[i].xyz.z)) {
-            continue;
-        }
-        colors.push_back(Eigen::Vector3d(1, 0, 0)); //红色
-    }
-    point_cloud->colors_ = colors;
-
+    point_cloud.VoxelDownSample(voxel_size);
 }
 
+template <typename T>
+void pcd::PointCloud::RotatePointCloud(T &point_cloud, pcd::Axis axis, float angle) {
+    if (axis == pcd::Axis::X) {
+        // point_cloud.Rotate(GetRotationMatrixX<Eigen::Matrix3d>(angle), Eigen::Vector3d(0, 0, 0));
+    } else if (axis == pcd::Axis::Y) {
+        // point_cloud.Rotate(GetRotationMatrixY<Eigen::Matrix3d>(angle), Eigen::Vector3d(0, 0, 0));
+    } else if (axis == pcd::Axis::Z) {
+        // point_cloud.Rotate(GetRotationMatrixZ<Eigen::Matrix3d>(angle), Eigen::Vector3d(0, 0, 0));
+    }
+}
 
-//int main() {
-    // 读取电脑中的 ply 点云文件
-//    auto source = std::make_shared<open3d::geometry::PointCloud>();
-//    auto target = std::make_shared<open3d::geometry::PointCloud>();
-//    open3d::io::ReadPointCloud("ply-data/1.ply", *source);
-//    open3d::io::ReadPointCloud("ply-data/2.ply", *target);
-//
-//     为两个点云上上不同的颜色
-//    source->PaintUniformColor({1, 0.706, 0});    // source 为黄色
-//    target->PaintUniformColor({0, 0.651, 0.929});// target 为蓝色
+template <>
+void pcd::PointCloud::RotatePointCloud<geometry::PointCloud>(geometry::PointCloud &point_cloud, pcd::Axis axis,
+                                                             float angle) {
+    if (axis == pcd::Axis::X) {
+        point_cloud.Rotate(GetRotationMatrixX<Eigen::Matrix3d>(angle), Eigen::Vector3d(0, 0, 0));
+    } else if (axis == pcd::Axis::Y) {
+        point_cloud.Rotate(GetRotationMatrixY<Eigen::Matrix3d>(angle), Eigen::Vector3d(0, 0, 0));
+    } else if (axis == pcd::Axis::Z) {
+        point_cloud.Rotate(GetRotationMatrixZ<Eigen::Matrix3d>(angle), Eigen::Vector3d(0, 0, 0));
+    }
+}
+template <>
+void pcd::PointCloud::RotatePointCloud<t::geometry::PointCloud>(t::geometry::PointCloud &point_cloud, pcd::Axis axis,
+                                                                float angle) {
+    if (axis == pcd::Axis::X) {
+        point_cloud.Rotate(GetRotationMatrixX<core::Tensor>(angle),
+                           core::Tensor::Zeros({3}, core::Dtype::Float64, core::Device("CPU:0")));
+    } else if (axis == pcd::Axis::Y) {
+        point_cloud.Rotate(GetRotationMatrixY<core::Tensor>(angle),
+                           core::Tensor::Zeros({3}, core::Dtype::Float64, core::Device("CPU:0")));
+    } else if (axis == pcd::Axis::Z) {
+        point_cloud.Rotate(GetRotationMatrixZ<core::Tensor>(angle),
+                           core::Tensor::Zeros({3}, core::Dtype::Float64, core::Device("CPU:0")));
+    }
+}
 
-    // 为两个点云分别进行outlier removal
-//    auto processed_source = source->RadiusOutlierRemoval(16, 0.5);
-//    auto processed_target = target->RadiusOutlierRemoval(16, 0.5);
+template <typename T>
+T pcd::PointCloud::GetRotationMatrix(float angle, Eigen::Vector3d axis_vector) {
+    auto matrix = Eigen::AngleAxisd(MathUtils::DegreeToRadian(angle), Eigen::Vector3d(1, 0, 0)).toRotationMatrix();
+    if constexpr (std::is_same<T, Eigen::Matrix3d>::value) { // 判断T是否为Eigen::Matrix3d类型
+        return matrix;
+    } else if constexpr (std::is_same<T, core::Tensor>::value) { // 判断T是否为core::Tensor类型
+        return core::eigen_converter::EigenMatrixToTensor(matrix);
+    }
+    Debug::CoutError("GetRotationMatrix: 模板T类型错误，只能为Eigen::Matrix3d或core::Tensor");
+    return;
+}
 
-//    double threshold = 1.0; // 移动范围的阀值
-//    Eigen::Matrix4d trans_init = Eigen::Matrix4d::Identity(); // 4x4 identity matrix，这是一个转换矩阵，象征着没有任何位移，没有任何旋转，我们输入这个矩阵为初始变换
-//
-//    // 运行ICP
-//    open3d::pipelines::registration::RegistrationResult reg_p2p;
-//    reg_p2p = open3d::pipelines::registration::RegistrationICP(
-//            *source, *target, threshold, trans_init,
-//            open3d::pipelines::registration::TransformationEstimationPointToPoint());
-//
-//    // 将我们的点云依照输出的变换矩阵进行变换
-//    source->Transform(reg_p2p.transformation_);
-//
-//    // 点云相加：将两个点云合并到一起，这样我们就可以看到两个点云的对齐效果
-//    *target += *source;
+template <>
+Eigen::Matrix3d pcd::PointCloud::GetRotationMatrix(float angle, Eigen::Vector3d axis_vector) {
+    return Eigen::AngleAxisd(MathUtils::DegreeToRadian(angle), Eigen::Vector3d(1, 0, 0)).toRotationMatrix();
+}
 
-//    //保存结果
-//    open3d::io::WritePointCloud("reg/reged.pcd", *target);
+template <>
+core::Tensor pcd::PointCloud::GetRotationMatrix(float angle, Eigen::Vector3d axis_vector) {
+    return core::eigen_converter::EigenMatrixToTensor(
+        Eigen::AngleAxisd(MathUtils::DegreeToRadian(angle), Eigen::Vector3d(1, 0, 0)).toRotationMatrix());
+}
 
-//    std::vector<std::shared_ptr<const open3d::geometry::Geometry>> geometries;
-//    geometries.push_back(target);
-//
-//    // 使用 `DrawGeometries()` 函数来显示点云
-//    open3d::visualization::DrawGeometries(geometries);
+// 绕X轴旋转
+template <typename T>
+T pcd::PointCloud::GetRotationMatrixX(float angle) {
+    return GetRotationMatrix<T>(angle, Eigen::Vector3d(1, 0, 0));
+}
 
-//    etrs::o3d::registration(source, target); //ICP配准
-//    etrs::o3d::add(source, target);  //点云相加
-//    etrs::o3d::save(source, "reg/reged.pcd");    //保存结果
-//    etrs::o3d::show(source); //显示结果
-//
-//    return 0;
-//}
+// 绕Y轴旋转
+template <typename T>
+T pcd::PointCloud::GetRotationMatrixY(float angle) {
+    return GetRotationMatrix<T>(angle, Eigen::Vector3d(0, 1, 0));
+}
+
+// 绕Z轴旋转
+template <typename T>
+T pcd::PointCloud::GetRotationMatrixZ(float angle) {
+    return GetRotationMatrix<T>(angle, Eigen::Vector3d(0, 0, 1));
+}
+
+template <typename T>
+void pcd::PointCloud::AdjustPointCloudNum(T &point_cloud, int num_multiple) {
+    if (num_multiple <= 0) {
+        Debug::CoutError("AdjustPointCloudNum: num_multiple 必须大于 0");
+        return;
+    }
+    // int point_count = point_cloud.points_.size();
+    // TODO: 待确认Python推理的具体约束
+}
+
+// 显式实例化模板函数
+template void pcd::PointCloud::DownSamplePointCloud(geometry::PointCloud &, float);
+template void pcd::PointCloud::DownSamplePointCloud(t::geometry::PointCloud &, float);
+template void pcd::PointCloud::RotatePointCloud(geometry::PointCloud &, pcd::Axis, float);
+template void pcd::PointCloud::RotatePointCloud(t::geometry::PointCloud &, pcd::Axis, float);
+template Eigen::Matrix3d pcd::PointCloud::GetRotationMatrixX<Eigen::Matrix3d>(float);
+template core::Tensor pcd::PointCloud::GetRotationMatrixX<core::Tensor>(float);
+template Eigen::Matrix3d pcd::PointCloud::GetRotationMatrixY<Eigen::Matrix3d>(float);
+template core::Tensor pcd::PointCloud::GetRotationMatrixY<core::Tensor>(float);
+template Eigen::Matrix3d pcd::PointCloud::GetRotationMatrixZ<Eigen::Matrix3d>(float);
+template core::Tensor pcd::PointCloud::GetRotationMatrixZ<core::Tensor>(float);
+template void pcd::PointCloud::AdjustPointCloudNum<geometry::PointCloud>(geometry::PointCloud &, int);
+template void pcd::PointCloud::AdjustPointCloudNum<t::geometry::PointCloud>(t::geometry::PointCloud &, int);

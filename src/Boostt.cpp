@@ -18,7 +18,8 @@ int main(int argc, char **argv) {
     open3d::io::ReadPointCloud("ply/sm.ply", pcd);
     PointCloudType point_cloud = pcd.points_;
 
-    DetectionResultType result = py_invoker.detectObjects("object_detection", "detect_objects", point_cloud);
+    // DetectionResultType result = py_invoker.detectObjects("object_detection", "detect_objects", point_cloud);
+    DetectionResultType result = py_invoker.runFuncWithOneArg<DetectionResultType, PointCloudType>("object_detection", "detect_objects", point_cloud);
     for (auto item : result) {
         cout << "==== 物体: "<< item.label << "=======" << endl;
         BoundingBoxType bbox = item.bbox;
