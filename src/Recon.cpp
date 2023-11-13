@@ -1,5 +1,5 @@
 //
-// Created by Cassius0924 on 2020/03/03.
+// Created by HoChihchou on 2020/03/03.
 //
 
 /*
@@ -8,23 +8,22 @@
  * 捕获图像并记录 IMU 数据，利用 Open3D 实现三维重建。
  */
 
+#include <iostream>
+#include <string>
+#include <chrono>
+#include <thread>
+#include <vector>
+
+#include <k4a/k4a.hpp>
+#include <open3d/Open3D.h>
+
 #include "AzureKinect.h"
 #include "AzureKinectExtrinsics.h"
 #include "Bot.h"
 #include "DataMessage.pb.h"
 #include "Network.h"
 #include "SoundSourceLocalization.h"
-#include "Utility.h"
-
-#include <iostream>
-#include <k4a/k4a.hpp>
-#include <string>
-
-#include <chrono>
-#include <thread>
-#include <vector>
-
-#include <open3d/Open3D.h>
+#include "utility/Utility.h"
 
 using namespace std;
 using namespace open3d;

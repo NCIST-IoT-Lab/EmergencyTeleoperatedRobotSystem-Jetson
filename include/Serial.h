@@ -1,20 +1,21 @@
 #ifndef _SERIAL_H_
 #define _SERIAL_H_
 
-#include <Device.h>
-#include <Utility.h>
 
-#include "fcntl.h"
-#include "pthread.h"
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
-#include "termios.h"
-#include "unistd.h"
-#include <errno.h>
 #include <iostream>
+#include <fcntl.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <termios.h>
+#include <unistd.h>
+#include <errno.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+
+#include "Device.h"
+#include "utility/Utility.h"
 
 using namespace std;
 using namespace etrs::device;

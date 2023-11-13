@@ -2,9 +2,9 @@
 // Created by HoChihchou on 2023/11/06.
 //
 
-#include "geometry/PointCloud.h"
-
 #include <iostream>
+
+#include "geometry/PointCloud.h"
 
 using namespace etrs;
 namespace etrs_geo = etrs::geometry;

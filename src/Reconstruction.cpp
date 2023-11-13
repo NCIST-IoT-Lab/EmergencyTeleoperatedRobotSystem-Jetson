@@ -1,5 +1,5 @@
 //
-// Created by Cassius0924 on 2020/03/03.
+// Created by HoChihchou on 2020/03/03.
 //
 
 #include "AzureKinect.h"

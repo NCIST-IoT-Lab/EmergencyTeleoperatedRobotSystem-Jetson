@@ -1,24 +1,23 @@
 #ifndef _BOT_H_
 #define _BOT_H_
 
-#include "fcntl.h"
-#include "pthread.h"
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
-#include "termios.h"
-#include "unistd.h"
+#include <fcntl.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <termios.h>
+#include <unistd.h>
 #include <errno.h>
 #include <string>
 #include <time.h>
-
 #include <functional>
 #include <sys/select.h>
 #include <sys/socket.h>
 
 #include "Bluetooth.h"
 #include "Serial.h"
-#include "Utility.h"
+#include "utility/Utility.h"
 
 using namespace std;
 using namespace etrs::utility;

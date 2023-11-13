@@ -5,12 +5,11 @@
 #ifndef _AZURE_KINECT_EXTRINSICS_H_
 #define _AZURE_KINECT_EXTRINSICS_H_
 
-// 导入Kinect库
 #include <k4a/k4a.h>
 #include <k4a/k4a.hpp>
-
 #include <Eigen/Core>
-#include <Utility.h>
+
+#include "utility/Utility.h"
 
 using namespace std;
 using namespace etrs::utility;

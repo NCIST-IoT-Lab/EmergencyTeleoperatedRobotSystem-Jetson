@@ -2,6 +2,16 @@
 // Created by Cassius0924 on 2023/03/03.
 //
 
+
+#include <iostream>
+#include <string>
+#include <chrono>
+#include <thread>
+#include <vector>
+
+#include <k4a/k4a.hpp>
+#include <open3d/Open3D.h>
+
 #include "AzureKinect.h"
 #include "AzureKinectExtrinsics.h"
 #include "Bluetooth.h"
@@ -13,16 +23,6 @@
 #include "SoundSourceLocalization.h"
 #include "utility/Utility.h"
 #include "geometry/Geometry.h"
-
-#include <iostream>
-#include <k4a/k4a.hpp>
-#include <string>
-
-#include <chrono>
-#include <thread>
-#include <vector>
-
-#include <open3d/Open3D.h>
 
 using namespace std;
 using namespace open3d;

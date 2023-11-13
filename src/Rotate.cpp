@@ -8,18 +8,17 @@
  * 捕获图像并记录 IMU 数据，利用 Open3D 实现三维重建。
  */
 
-#include "Bot.h"
-#include "Utility.h"
-
 #include <iostream>
-#include <k4a/k4a.hpp>
 #include <string>
-
 #include <chrono>
 #include <thread>
 #include <vector>
 
+#include <k4a/k4a.hpp>
 #include <open3d/Open3D.h>
+
+#include "Bot.h"
+#include "utility/Utility.h"
 
 using namespace std;
 using namespace open3d;

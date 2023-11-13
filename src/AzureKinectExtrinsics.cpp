@@ -4,11 +4,9 @@
 
 #include "iostream"
 #include <cmath>
-// 导入Kinect库
+
 #include <k4a/k4a.h>
 #include <k4a/k4a.hpp>
-
-// Eigen
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 

@@ -1,8 +1,8 @@
-#include "Bot.h"
-
-#include <cmath>
 #include <iostream>
+#include <cmath>
 #include <thread>
+
+#include "Bot.h"
 
 using namespace std;
 using namespace etrs::bot;

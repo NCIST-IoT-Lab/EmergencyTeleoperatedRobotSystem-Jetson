@@ -5,9 +5,10 @@
 #ifndef _PYTHON_INVOKER_H_
 #define _PYTHON_INVOKER_H_
 
-#include <TypeConverters.h>
-#include <Utility.h>
 #include <boost/python.hpp>
+
+#include "TypeConverters.h"
+#include "utility/Utility.h"
 
 // 基于Boost.Python的Python调用器
 namespace etrs::py {

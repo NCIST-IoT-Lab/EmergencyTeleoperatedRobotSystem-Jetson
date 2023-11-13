@@ -2,17 +2,19 @@
 // Created by Cassius0924 on 4/30/23.
 //
 
-#include "AzureKinect.h"
 
-#include <Eigen/Core>
-#include <Eigen/Dense>
-#include <alsa/asoundlib.h>
 #include <cmath>
 #include <complex>
 #include <fftw3.h>
 #include <iostream>
 #include <numeric>
 #include <vector>
+
+#include <Eigen/Core>
+#include <Eigen/Dense>
+#include <alsa/asoundlib.h>
+
+#include "AzureKinect.h"
 
 #define MICROPHONE_NAME "plughw:2,0"// 麦克风名称：声卡2的0号设备
 

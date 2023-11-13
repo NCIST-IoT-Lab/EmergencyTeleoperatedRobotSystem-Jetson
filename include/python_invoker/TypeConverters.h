@@ -7,9 +7,10 @@
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-#include <Utility.h>
-#include <Types.h>
 #include <boost/python.hpp>
+
+#include "python_invoker/Types.h"
+#include "utility/Utility.h"
 
 using namespace std;
 namespace bstpy = boost::python;

@@ -2,21 +2,22 @@
 #ifndef _NETWORK_H_
 #define _NETWORK_H_
 
-#include "Utility.h"
-#include "DataMessage.pb.h"
-#include "Types.h"
-
 #include <iostream>
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <net/if.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h> //TCP_NODELAY
-#include <open3d/Open3D.h>
 #include <sstream>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+
+#include <open3d/Open3D.h>
+
+#include "DataMessage.pb.h"
+#include "python_invoker/Types.h"
+#include "utility/Utility.h"
 
 using namespace etrs::utility;
 

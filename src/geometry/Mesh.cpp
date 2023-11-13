@@ -2,9 +2,9 @@
 // Created by HoChihchou on 2023/11/12.
 //
 
-#include "geometry/Mesh.h"
-
 #include <iostream>
+
+#include "geometry/Mesh.h"
 
 using namespace etrs;
 namespace etrs_geo = etrs::geometry;

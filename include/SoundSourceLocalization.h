@@ -5,11 +5,13 @@
 #ifndef _SOUND_SOURCE_LOCALIZATION_CASWEBSOCKET_H_
 #define _SOUND_SOURCE_LOCALIZATION_CASWEBSOCKET_H_
 
+#include <iostream>
+
+#include <alsa/asoundlib.h>
 #include <Eigen/Core>
 #include <Eigen/Dense>
-#include <Utility.h>
-#include <alsa/asoundlib.h>
-#include <iostream>
+
+#include "utility/Utility.h"
 
 using namespace std;
 using namespace etrs::utility;

@@ -1,31 +1,28 @@
 #ifndef _BLUETOOTH_H_
 #define _BLUETOOTH_H_
 
+// TODO: 删除无用的include
+#include <sys/uio.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/select.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <cstring>
+#include <iostream>
+#include <vector>
+
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_lib.h>
 #include <bluetooth/l2cap.h>
 #include <bluetooth/rfcomm.h>
-#include <sys/uio.h>
 
-// TODO: 输出无用的include
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <sys/select.h>
-#include <unistd.h>
-
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-
-#include <cstring>
-#include <iostream>
-#include <vector>
-
-#include <Device.h>
-#include <Utility.h>
+#include "Device.h"
+#include "utility/Utility.h"
 
 using namespace etrs::utility;
 using namespace std;

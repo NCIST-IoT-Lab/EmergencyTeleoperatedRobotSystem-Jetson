@@ -5,9 +5,10 @@
 #ifndef _OBJECT_DETECTION_H_
 #define _OBJECT_DETECTION_H_
 
-#include <PythonInvoker.h>
-#include <DataMessage.pb.h>
-#include <Utility.h>
+
+#include "DataMessage.pb.h"
+#include "python_invoker/PythonInvoker.h"
+#include "utility/Utility.h"
 
 using namespace etrs::utility;
 using namespace etrs::py;

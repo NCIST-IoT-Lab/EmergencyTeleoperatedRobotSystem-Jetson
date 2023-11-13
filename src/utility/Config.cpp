@@ -1,8 +1,9 @@
 //
 // Create by HoChihchou on 2023/3/27
 //
-#include "Config.h"
-#include "Debug.h"
+
+#include "utility/Config.h"
+#include "utility/Debug.h"
 
 using namespace std;
 using namespace etrs::utility;

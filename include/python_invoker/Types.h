@@ -5,8 +5,9 @@
 #ifndef _TYPES_H_
 #define _TYPES_H_
 
-#include <Eigen/Core>
 #include <iostream>
+
+#include <Eigen/Core>
 
 using namespace std;
 

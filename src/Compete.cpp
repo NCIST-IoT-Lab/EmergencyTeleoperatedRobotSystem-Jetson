@@ -1,21 +1,21 @@
+
+#include <iostream>
+#include <string>
+#include <chrono>
+#include <ncurses.h>
+#include <thread>
+#include <vector>
+
+#include <k4a/k4a.hpp>
+#include <open3d/Open3D.h>
+
 #include "AzureKinect.h"
 #include "AzureKinectExtrinsics.h"
 #include "Bot.h"
 #include "DataMessage.pb.h"
 #include "Network.h"
 #include "SoundSourceLocalization.h"
-#include "Utility.h"
-
-#include <iostream>
-#include <k4a/k4a.hpp>
-#include <string>
-
-#include <chrono>
-#include <ncurses.h>
-#include <thread>
-#include <vector>
-
-#include <open3d/Open3D.h>
+#include "utility/Utility.h"
 
 using namespace std;
 using namespace open3d;

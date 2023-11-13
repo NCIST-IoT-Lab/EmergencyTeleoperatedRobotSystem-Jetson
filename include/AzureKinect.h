@@ -6,7 +6,8 @@
 #define _AZURE_KINECT_H_
 
 #include <k4a/k4a.hpp>
-#include <Utility.h>
+
+#include "utility/Utility.h"
 
 using namespace etrs::utility;
 
