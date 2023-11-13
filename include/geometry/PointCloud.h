@@ -6,6 +6,7 @@
 #define _POINT_CLOUD_H_
 
 #include <Utility.h>
+#include <geometry/Transformation.h>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -15,9 +16,7 @@ using namespace std;
 using namespace etrs::utility;
 using namespace open3d;
 
-namespace etrs::pcd {
-    // 给RotatePointCloud的坐标轴
-    enum Axis { X, Y, Z };
+namespace etrs::geometry {
 
     class PointCloud {
     public:
@@ -28,30 +27,13 @@ namespace etrs::pcd {
         static void DownSamplePointCloud(T &point_cloud, float voxel_size);
 
         template <typename T>
-        static void RotatePointCloud(T &point_cloud, Axis axis, float angle);
-
-        // TODO: 提取出来，让Mesh类也能用
-        // 绕任意轴旋转
-        template <typename T>
-        static T GetRotationMatrix(float angle, Eigen::Vector3d axis_vector);
-
-        // 绕X轴旋转
-        template <typename T>
-        static T GetRotationMatrixX(float angle);
-
-        // 绕Y轴旋转
-        template <typename T>
-        static T GetRotationMatrixY(float angle);
-
-        // 绕Z轴旋转
-        template <typename T>
-        static T GetRotationMatrixZ(float angle);
+        static void RotatePointCloud(T &point_cloud, etrs::geometry::Axis axis, float angle);
 
         // 将点云数量微调到某个值的倍数（删点）
         template <typename T>
         static void AdjustPointCloudNum(T &point_cloud, int num_multiple);
-
     };
-} // namespace etrs::pcd
+
+} // namespace etrs::geometry
 
 #endif //_POINT_CLOUD_H_

@@ -8,10 +8,11 @@
 #include "Bot.h"
 #include "DataMessage.pb.h"
 #include "Network.h"
+#include "ObjectDetection.h"
 #include "PointCloud.h"
 #include "SoundSourceLocalization.h"
-#include "ObjectDetection.h"
-#include "Utility.h"
+#include "utility/Utility.h"
+#include "geometry/Geometry.h"
 
 #include <iostream>
 #include <k4a/k4a.hpp>
@@ -433,7 +434,7 @@ int main(int argc, char **argv) {
 
             // 旋转电机
             bot_motor.rotate(angle, MOTOR_SPEED);
-            while (flag_recording < 2) {    //TODO: 封装
+            while (flag_recording < 2) { // TODO: 封装
                 im_rgbd = sensor.CaptureFrame(true);
                 if (im_rgbd == nullptr) { // 读取失败则跳过
                     continue;
@@ -455,11 +456,11 @@ int main(int argc, char **argv) {
                         // TODO: 打印 result.transformation_
                         // 的值，看看位移值是否为0，再比较一下旋转值和IMU获取的旋转值是否一致？
 
-                        core::Tensor t1 = etrs::utility::Transformation::RemoveYTranslationT(result.transformation_);
+                        core::Tensor t1 = etrs::geometry::Translation::RemoveTranslationY(result.transformation_);
 
                         // string d = FIRST_MOTOR_ROTATION == "F" ? "R" : "F";
-                        core::Tensor t2 = etrs::utility::Transformation::RemoveXZRotationT(t1, "F");
-                        double translation_norm = etrs::utility::Transformation::CalculateTranslationNormT(t2);
+                        core::Tensor t2 = etrs::geometry::Rotation::RemoveRotationXZ(t1, "F");
+                        double translation_norm = etrs::geometry::Translation::CalculateTranslationNorm(t2);
 
                         if (translation_norm < 0.15) {
                             T_frame_to_model = T_frame_to_model.Matmul(t2);
@@ -488,19 +489,31 @@ int main(int argc, char **argv) {
             sensor.Disconnect();
 
             // TODO: 使用MathUtils静态函数
-            core::Tensor rotate_tensor = open3d::core::eigen_converter::EigenMatrixToTensor(
-                Eigen::AngleAxisd(-(angle / 2) / 180.0 * M_PI, Eigen::Vector3d(0, 1, 0)).toRotationMatrix());
-            core::Tensor center_tensor =
-                core::Tensor::Zeros({3}, core::Dtype::Float64, core::Device("CPU:0")); // FIXME:  能否改成 CDUA:0
-            auto mesh = model.ExtractTriangleMesh().Rotate(rotate_tensor, center_tensor).ToLegacy();
+            // core::Tensor rotate_tensor = open3d::core::eigen_converter::EigenMatrixToTensor(
+            //     Eigen::AngleAxisd(-(angle / 2) / 180.0 * M_PI, Eigen::Vector3d(0, 1, 0)).toRotationMatrix());
+            // core::Tensor center_tensor =
+            //     core::Tensor::Zeros({3}, core::Dtype::Float64, core::Device("CPU:0")); // FIXME:  能否改成 CDUA:0
+            // auto mesh = model.ExtractTriangleMesh().Rotate(rotate_tensor, center_tensor).ToLegacy();
+
+            auto mesh = model.ExtractTriangleMesh();
             // 为目标检测预处理点云，包括下采样，旋转。
             point_cloud = model.ExtractPointCloud();
+
+            etrs::geometry::Mesh::RotateMesh(mesh, etrs::geometry::Axis::Y, -(angle / 2.0));
+
+            open3d::geometry::TriangleMesh legacy_mesh(mesh.ToLegacy());
 
             // FIXME:
             // 发送面片数据
             if (IS_WRITE_MESH_FILE) {
                 Debug::CoutDebug("保存面片数据中");
-                io::WriteTriangleMesh("ply/sm.ply", mesh);
+                io::WriteTriangleMesh("ply/mesh.ply", legacy_mesh);
+            }
+
+            // TODO: 封装Write
+            if (IS_WRITE_POINT_CLOUD_FILE) {
+                Debug::CoutDebug("保存点云数据中");
+                t::io::WritePointCloud("ply/point_cloud.ply", point_cloud);
             }
 
             bot_motor.rotate(-angle / 2, 3000);
@@ -509,17 +522,15 @@ int main(int argc, char **argv) {
 
             std::thread t([&]() {
                 Debug::CoutDebug("开始发送数据");
-                holocom.sendMessageFromMesh(mesh, 800);
+                holocom.sendMessageFromMesh(legacy_mesh, 800);
             });
             t.detach();
 
-            etrs::pcd::PointCloud::DownSamplePointCloud(point_cloud, VOXEL_SIZE);
-            etrs::pcd::PointCloud::RotatePointCloud(point_cloud, etrs::pcd::Axis::X, 90);
+            etrs::geometry::PointCloud::DownSamplePointCloud(point_cloud, VOXEL_SIZE);
+            etrs::geometry::PointCloud::RotatePointCloud(point_cloud, etrs::geometry::Axis::X, 90);
             etrs::det3d::ObjectDetector object_detector;
             DetectionResultType detection_result = object_detector.detectObjects(point_cloud.ToLegacy().points_);
             holocom.sendMessageFromDetectionResult(detection_result);
-            
-
         }
         break;
     }

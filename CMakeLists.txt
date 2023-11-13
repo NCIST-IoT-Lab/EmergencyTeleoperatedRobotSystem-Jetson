@@ -11,6 +11,12 @@ SET(CMAKE_EXE_LINKER_FLAGS "-lstdc++")
 project(CasPointCloud)
 SET(this_target AcquiringPointCloud)
 
+# 指定头文件目录
+include_directories(include)
+include_directories(include/utility)
+include_directories(include/python_invoker)
+include_directories(include/geometry)
+
 # Kinect DK相机
 find_package(k4a REQUIRED)
 
@@ -54,22 +60,20 @@ SET(BOOST_DIR /usr/lib/x86_64-linux-gnu/)
 
 file(GLOB_RECURSE UTILITY src/utility/*.cpp)
 
-# 指定头文件目录
-include_directories(include)
-include_directories(include/utility)
-include_directories(include/python_invoker)
 
 add_executable(EmergencyTeleoperatedRobotSystem
         src/EmergencyTeleoperatedRobotSystem.cpp 
         src/AzureKinectExtrinsics.cpp 
         src/SoundSourceLocalization.cpp
         src/AzureKinect.cpp 
-        src/PointCloud.cpp
         src/Bot.cpp
         src/Network.cpp
         src/Bluetooth.cpp
         src/Device.cpp
         src/Serial.cpp
+        src/geometry/Transformation.cpp
+        src/geometry/PointCloud.cpp
+        src/geometry/Mesh.cpp
         src/python_invoker/PythonInvoker.cpp
         src/ObjectDetection.cpp
         ${UTILITY}
