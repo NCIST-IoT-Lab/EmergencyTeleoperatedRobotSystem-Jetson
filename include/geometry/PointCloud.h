@@ -26,6 +26,7 @@ namespace etrs::geometry {
         template <typename T>
         static void DownSamplePointCloud(T &point_cloud, float voxel_size);
 
+        // 旋转点云
         template <typename T>
         static void RotatePointCloud(T &point_cloud, etrs::geometry::Axis axis, float angle);
 

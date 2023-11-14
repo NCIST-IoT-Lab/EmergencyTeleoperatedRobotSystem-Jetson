@@ -115,7 +115,7 @@ namespace etrs::bot {
             LED = 0x02,
         };
         STM32(string serial_port_name = DEFAULT_SERIAL_PORT_NAME);
-        ~STM32();
+        virtual ~STM32();
         bool sendData(unsigned char *send_buffer, const int send_length);
         // bool sendData(char *send_buffer, const int send_length);
         int recvData(unsigned char *recv_buffer, const int recv_length);
