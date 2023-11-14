@@ -5,12 +5,12 @@
 #ifndef _POINT_CLOUD_H_
 #define _POINT_CLOUD_H_
 
-#include <Utility.h>
-#include <geometry/Transformation.h>
-
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <open3d/Open3D.h>
+
+#include "geometry/Transformation.h"
+#include "utility/Utility.h"
 
 using namespace std;
 using namespace etrs::utility;
