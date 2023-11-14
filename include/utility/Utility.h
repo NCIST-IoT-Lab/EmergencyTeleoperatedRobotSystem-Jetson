@@ -9,7 +9,6 @@
 #include "utility/Debug.h"
 #include "utility/MacAddress.h"
 #include "utility/Timer.h"
-#include "utility/Transformation.h"
 #include "utility/MathUtils.h"
 
 #endif // _UTILITY_H_
