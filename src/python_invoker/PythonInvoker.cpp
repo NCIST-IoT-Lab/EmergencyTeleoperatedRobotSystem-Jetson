@@ -20,8 +20,10 @@ bool PythonInvoker::initailize() {
     }
     Py_Initialize();    // 初始化Python环境，分配Python使用资源
     if (!Py_IsInitialized()){
+        Debug::CoutError("三维目标检测环境初始化失败！(Python)");
         return false;
     }
+    Debug::CoutSuccess("Python三维目标检测环境初始化成功！");
     is_init= true;
     return true;
 }
@@ -39,9 +41,11 @@ void PythonInvoker::importModule(string path) {
         string cmd = "sys.path.append('" + path + "')";
         PyRun_SimpleString(cmd.c_str());
     } catch(...) {
+        Debug::CoutError("Python模块导入失败！");
         PyErr_Print();
         PyErr_Clear();
     }
+    Debug::CoutSuccess("Python模块：{} 导入成功！", path);
 }
 
 // DetectionResultType PythonInvoker::detectObjects(string module, string func, PointCloudType point_cloud) {

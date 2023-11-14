@@ -7,10 +7,14 @@
 using namespace std;
 using namespace etrs::det3d;
 
-ObjectDetector::ObjectDetector() {
+ObjectDetector::ObjectDetector(): py_invoker(){
+    py_invoker.initailize();
+    py_invoker.importModule(
+        "/home/ncistwlwsys/hezhizhou-projects/disk/SingleAzureKinect3DReconstruction/src/object_detection");
 }
 
 ObjectDetector::~ObjectDetector() {
+    py_invoker.finalize();
 }
 
 DetectionResultType ObjectDetector::detectObjects(const PointCloudType &point_cloud) {

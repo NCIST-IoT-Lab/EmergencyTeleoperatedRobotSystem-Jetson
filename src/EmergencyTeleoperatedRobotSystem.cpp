@@ -2,10 +2,9 @@
 // Created by Cassius0924 on 2023/03/03.
 //
 
-
+#include <chrono>
 #include <iostream>
 #include <string>
-#include <chrono>
 #include <thread>
 #include <vector>
 
@@ -21,8 +20,8 @@
 #include "ObjectDetection.h"
 #include "PointCloud.h"
 #include "SoundSourceLocalization.h"
-#include "utility/Utility.h"
 #include "geometry/Geometry.h"
+#include "utility/Utility.h"
 
 using namespace std;
 using namespace open3d;
@@ -75,10 +74,7 @@ int main(int argc, char **argv) {
     float DEPTH_DIFF = program_config.getFloat("depth_diff");
 
     k4a::device device;
-    // k4a_device_t device;
 
-    // etrs::bot::BotArm bot_arm_left(BOT_ARM_SERIAL_PORT_NAME, "机械臂");
-    // TODO: 将Unity端的机械臂数据的识别帧部分删除，在此处添加识别帧
     etrs::bot::BotArm bot_arm_left(LEFT_BOT_ARM_MAC_ADDRESS, "左机械臂");
     etrs::bot::BotArm bot_arm_right(RIGHT_BOT_ARM_MAC_ADDRESS, "右机械臂");
 
@@ -91,11 +87,6 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    // 打开（默认）设备
-    // device = k4a::device::open(K4A_DEVICE_DEFAULT);
-
-    // k4a_device_open(0, &device);
-    // cout << "打开 Azure Kinect 设备" << endl;
     k4a_device_configuration_t config;
 
     // 配置并启动设备
@@ -105,24 +96,6 @@ int main(int argc, char **argv) {
     config.color_resolution = K4A_COLOR_RESOLUTION_1536P;
     config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
     config.synchronized_images_only = true; // 只输出同步的图像，即同步深度图和彩色图
-
-    // k4a_device_start_cameras(device, &config);
-    // device.start_cameras(&config);
-    // cout << "开启相机。" << endl;
-
-    // // 稳定化
-    // etrs::kinect::stabilizeCamera(device);
-    // cout << "------------------------------------" << endl;
-    // cout << "----- 成功启动 Azure Kinect DK -----" << endl;
-    // cout << "------------------------------------" << endl;
-
-    // k4a::calibration k4a_calibration = device.get_calibration(config.depth_mode, config.color_resolution);
-
-    // _k4a_calibration_t k4a_calibration;
-    // k4a_device_get_calibration(device, config.depth_mode, config.color_resolution, &k4a_calibration);
-
-    // k4a::transformation k4a_transformation = k4a::transformation(k4a_calibration);
-    // k4a_transformation_t k4a_transformation = k4a_transformation_create(&k4a_calibration);
 
     if (IS_CONNECT_ARM) {
         if (bot_arm_left.reset() && bot_arm_right.reset()) {
@@ -212,6 +185,9 @@ int main(int argc, char **argv) {
     etrs::proto::KinectMode::Mode kinect_mode = etrs::proto::KinectMode::RECONSTRCUTION;
 
     int angle = 90;
+    if (argc > 2) {
+        angle = atoi(argv[2]);
+    }
 
     // 声源定位线程
     // thread ssl_thread([&]() {
@@ -264,7 +240,7 @@ int main(int argc, char **argv) {
                     break;
                 }
                 case (int)etrs::proto::DataMessage::BOT_ARM: {
-                    Debug::CoutSuccess("收到机械臂数据");
+                    // Debug::CoutSuccess("收到机械臂数据");
                     int length = data_message.bot_arm().angles_size();
                     switch ((int)data_message.bot_arm().side()) {
                         case (int)etrs::proto::BotArm::Left: {
@@ -325,24 +301,25 @@ int main(int argc, char **argv) {
 
     // TODO: 将接收线程写进类里，这样可以在写阻塞式的motor.rotateWait()
     thread receive_stm32_thread([&]() {
-        unsigned char stm32_buffer[32];
+        unsigned char stm32_buffer[64];
         while (true) {
             unique_lock<mutex> lock(stm32_mutex);
             // 等待接受到stm32的数据
-            bot_motor.recvData(stm32_buffer, 32);
+            bot_motor.recvData(stm32_buffer, 64);
             char data_type = stm32_buffer[0];
 
+            cout << "DATATYPE: " << data_type << endl;
             switch (data_type) {
                 case 'M':
                 case 'm': {
                     // TODO: 字符串判断这个也可以封装
-                    if ((stm32_buffer[4] == 'd' || stm32_buffer[4] == 'D') &&
-                        (stm32_buffer[5] == 'o' || stm32_buffer[5] == 'O') &&
-                        (stm32_buffer[6] == 'n' || stm32_buffer[6] == 'N') &&
-                        (stm32_buffer[7] == 'e' || stm32_buffer[7] == 'E')) {
-                        Debug::CoutDebug("舵机旋转完成");
-                        ++flag_recording;
-                    }
+                    // if ((stm32_buffer[4] == 'd' || stm32_buffer[4] == 'D') &&
+                    //     (stm32_buffer[5] == 'o' || stm32_buffer[5] == 'O') &&
+                    //     (stm32_buffer[6] == 'n' || stm32_buffer[6] == 'N') &&
+                    //     (stm32_buffer[7] == 'e' || stm32_buffer[7] == 'E')) {
+                    Debug::CoutDebug("舵机旋转完成");
+                    ++flag_recording;
+                    // }
                     // "M$F DONE", "M$R DONE"
                     // 舵机旋转反馈
                     break;
@@ -383,6 +360,7 @@ int main(int argc, char **argv) {
     // 设备类型
     core::Device cuda_ = core::Device("cuda:0");
 
+    // TODO: 暂时这样写
     if (!IS_CONNECT_KINECT) {
         while (true)
             ;
@@ -393,18 +371,19 @@ int main(int argc, char **argv) {
     io::ReadIJsonConvertibleFromJSON(azure_kinect_config_file, sensor_config);
     io::AzureKinectSensor sensor(sensor_config);
 
+    this_thread::sleep_for(chrono::seconds(5));
+
     while (true) {
         kinect_going = true;
         core::Tensor intrinsic_t =
             core::Tensor::Init<double>({{963.205, 0, 1012.87}, {0, 962.543, 777.369}, {0, 0, 1}});
 
         while (kinect_going) {
+            // if (0) {
             if (!need_reconnstrcution) {
                 continue;
             }
             need_reconnstrcution = false;
-
-            t::geometry::PointCloud point_cloud;
 
             bot_motor.rotate(-angle / 2, 3000);
 
@@ -431,7 +410,6 @@ int main(int argc, char **argv) {
                                                     cuda_);
 
             int i = 0;
-
             // 旋转电机
             bot_motor.rotate(angle, MOTOR_SPEED);
             while (flag_recording < 2) { // TODO: 封装
@@ -488,32 +466,25 @@ int main(int argc, char **argv) {
             }
             sensor.Disconnect();
 
-            // TODO: 使用MathUtils静态函数
-            // core::Tensor rotate_tensor = open3d::core::eigen_converter::EigenMatrixToTensor(
-            //     Eigen::AngleAxisd(-(angle / 2) / 180.0 * M_PI, Eigen::Vector3d(0, 1, 0)).toRotationMatrix());
-            // core::Tensor center_tensor =
-            //     core::Tensor::Zeros({3}, core::Dtype::Float64, core::Device("CPU:0")); // FIXME:  能否改成 CDUA:0
-            // auto mesh = model.ExtractTriangleMesh().Rotate(rotate_tensor, center_tensor).ToLegacy();
-
-            auto mesh = model.ExtractTriangleMesh();
+            auto mesh = model.ExtractTriangleMesh(1.0);
             // 为目标检测预处理点云，包括下采样，旋转。
-            point_cloud = model.ExtractPointCloud();
+
+            t::geometry::PointCloud point_cloud = model.ExtractPointCloud(1.0);
+            // t::geometry::PointCloud point_cloud_5 = model.ExtractPointCloud(5);
+            // t::geometry::PointCloud point_cloud_1 = model.ExtractPointCloud(1);
+            // t::io::WritePointCloud("ply/test/point_cloud.ply", point_cloud);
+            // t::io::WritePointCloud("ply/test/point_cloud_5.ply", point_cloud_5);
+            // t::io::WritePointCloud("ply/test/point_cloud_1.ply", point_cloud_1);
 
             etrs::geometry::Mesh::RotateMesh(mesh, etrs::geometry::Axis::Y, -(angle / 2.0));
+            etrs::geometry::PointCloud::RotatePointCloud(point_cloud, etrs::geometry::Axis::Y, -(angle / 2.0));
 
             open3d::geometry::TriangleMesh legacy_mesh(mesh.ToLegacy());
 
-            // FIXME:
-            // 发送面片数据
+            // TODO: 封装Write
             if (IS_WRITE_MESH_FILE) {
                 Debug::CoutDebug("保存面片数据中");
                 io::WriteTriangleMesh("ply/mesh.ply", legacy_mesh);
-            }
-
-            // TODO: 封装Write
-            if (IS_WRITE_POINT_CLOUD_FILE) {
-                Debug::CoutDebug("保存点云数据中");
-                t::io::WritePointCloud("ply/point_cloud.ply", point_cloud);
             }
 
             bot_motor.rotate(-angle / 2, 3000);
@@ -526,10 +497,34 @@ int main(int argc, char **argv) {
             });
             t.detach();
 
-            etrs::geometry::PointCloud::DownSamplePointCloud(point_cloud, VOXEL_SIZE);
-            etrs::geometry::PointCloud::RotatePointCloud(point_cloud, etrs::geometry::Axis::X, 90);
+            // etrs::geometry::PointCloud::DownSamplePointCloud(point_cloud, VOXEL_SIZE);
+            auto point_cloud_down = point_cloud.VoxelDownSample(voxel_size); // FIXME: 是否是VOXEL_SIZE不合适
+
+            // FIXME: 旋转角度不正确
+            etrs::geometry::PointCloud::RotatePointCloud(point_cloud_down, etrs::geometry::Axis::X, -90);
+            auto legacy_point_cloud = point_cloud_down.ToLegacy();
+            if (IS_WRITE_POINT_CLOUD_FILE) {
+                Debug::CoutDebug("保存点云数据中");
+                io::WritePointCloud("ply/point_cloud.ply", legacy_point_cloud);
+            }
+            // }
+            // open3d::geometry::PointCloud pcd;
+            // open3d::io::ReadPointCloud("ply/nice_point_cloud.ply", pcd);
+
+            // open3d::geometry::TriangleMesh m;
+            // open3d::io::ReadTriangleMesh("ply/mesh.ply", m);
+            // holocom.sendMessageFromMesh(m, 800);
             etrs::det3d::ObjectDetector object_detector;
-            DetectionResultType detection_result = object_detector.detectObjects(point_cloud.ToLegacy().points_);
+            DetectionResultType detection_result = object_detector.detectObjects(legacy_point_cloud.points_);
+            // DetectionResultType detection_result = object_detector.detectObjects(pcd.points_);
+            for (auto item : detection_result) {
+                cout << "==== 物体: " << item.label << "=======" << endl;
+                BoundingBoxType bbox = item.bbox;
+                cout << item.bbox.x << " " << item.bbox.y << " " << item.bbox.z << " " << item.bbox.l << " "
+                     << item.bbox.w << " " << item.bbox.h << " " << item.bbox.yaw << endl;
+                cout << item.score << endl;
+            }
+
             holocom.sendMessageFromDetectionResult(detection_result);
         }
         break;

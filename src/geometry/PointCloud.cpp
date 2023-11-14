@@ -28,11 +28,11 @@ template <>
 void etrs_geo::PointCloud::RotatePointCloud<o3d_geo::PointCloud>(o3d_geo::PointCloud &point_cloud, etrs_geo::Axis axis,
                                                                  float angle) {
     if (axis == etrs_geo::Axis::X) {
-        point_cloud.Rotate(etrs_geo::Rotation::GetRotationMatrixX<Eigen::Matrix3d>(angle), Eigen::Vector3d(0, 0, 0));
+        point_cloud.Rotate(etrs_geo::Rotation::GetRotationMatrixX<Eigen::Matrix3d>(angle), Eigen::Vector3d::Zero());
     } else if (axis == etrs_geo::Axis::Y) {
-        point_cloud.Rotate(etrs_geo::Rotation::GetRotationMatrixY<Eigen::Matrix3d>(angle), Eigen::Vector3d(0, 0, 0));
+        point_cloud.Rotate(etrs_geo::Rotation::GetRotationMatrixY<Eigen::Matrix3d>(angle), Eigen::Vector3d::Zero());
     } else if (axis == etrs_geo::Axis::Z) {
-        point_cloud.Rotate(etrs_geo::Rotation::GetRotationMatrixZ<Eigen::Matrix3d>(angle), Eigen::Vector3d(0, 0, 0));
+        point_cloud.Rotate(etrs_geo::Rotation::GetRotationMatrixZ<Eigen::Matrix3d>(angle), Eigen::Vector3d::Zero());
     }
 }
 
@@ -65,6 +65,7 @@ void etrs_geo::PointCloud::AdjustPointCloudNum(T &point_cloud, int num_multiple)
 template void etrs_geo::PointCloud::DownSamplePointCloud<o3d_geo::PointCloud>(o3d_geo::PointCloud &, float);
 template void etrs_geo::PointCloud::DownSamplePointCloud<t::geometry::PointCloud>(t::geometry::PointCloud &, float);
 template void etrs_geo::PointCloud::RotatePointCloud<o3d_geo::PointCloud>(o3d_geo::PointCloud &, etrs_geo::Axis, float);
-template void etrs_geo::PointCloud::RotatePointCloud<t::geometry::PointCloud>(t::geometry::PointCloud &, etrs_geo::Axis, float);
+template void etrs_geo::PointCloud::RotatePointCloud<t::geometry::PointCloud>(t::geometry::PointCloud &, etrs_geo::Axis,
+                                                                              float);
 template void etrs_geo::PointCloud::AdjustPointCloudNum<o3d_geo::PointCloud>(o3d_geo::PointCloud &, int);
 template void etrs_geo::PointCloud::AdjustPointCloudNum<t::geometry::PointCloud>(t::geometry::PointCloud &, int);

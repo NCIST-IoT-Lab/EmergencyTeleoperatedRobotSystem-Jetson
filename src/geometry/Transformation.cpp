@@ -121,6 +121,8 @@ double etrs_geo::Translation::CalculateTranslationNorm(const core::Tensor &trans
 }
 
 // 显式实例化模板函数
+template Eigen::Matrix3d etrs_geo::Rotation::GetRotationMatrix(Eigen::Vector3d , float);
+template core::Tensor etrs_geo::Rotation::GetRotationMatrix(Eigen::Vector3d , float);
 template Eigen::Matrix3d etrs_geo::Rotation::GetRotationMatrixX<Eigen::Matrix3d>(float);
 template core::Tensor etrs_geo::Rotation::GetRotationMatrixX<core::Tensor>(float);
 template Eigen::Matrix3d etrs_geo::Rotation::GetRotationMatrixY<Eigen::Matrix3d>(float);
