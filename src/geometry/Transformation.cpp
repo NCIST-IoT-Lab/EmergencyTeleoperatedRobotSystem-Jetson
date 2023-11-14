@@ -99,6 +99,21 @@ T etrs_geo::Translation::RemoveTranslationY(const T &transformation) {
     return;
 }
 
+void etrs_geo::Rotation::RotateBoundingBoxes(DetectionResultType &result, etrs::geometry::Axis axis, float angle) {
+    Eigen::Martix3d R;
+    if (axis == etrs_geo::Axis::X) {
+        R = GetRotationMatrixX<Eigen::Matrix3d>(angle);
+    } else if (axis == etrs_geo::Axis::Y) {
+        R = GetRotationMatrixY<Eigen::Matrix3d>(angle);
+    } else if (axis == etrs_geo::Axis::Z) {
+        R = GetRotationMatrixZ<Eigen::Matrix3d>(angle);
+    }
+    for (auto &object : result) {
+        Eigen::Map<Eigen::Vector3d> translation(&object.bbox.x);    // 通过引用传递，不做值传递和拷贝
+        translation = R * translation;  //原点
+    }
+}
+
 template <>
 Eigen::Matrix4d etrs_geo::Translation::RemoveTranslationY(const Eigen::Matrix4d &transformation) {
     // Eigen::Matrix4d result = transformation;
@@ -121,8 +136,8 @@ double etrs_geo::Translation::CalculateTranslationNorm(const core::Tensor &trans
 }
 
 // 显式实例化模板函数
-template Eigen::Matrix3d etrs_geo::Rotation::GetRotationMatrix(Eigen::Vector3d , float);
-template core::Tensor etrs_geo::Rotation::GetRotationMatrix(Eigen::Vector3d , float);
+template Eigen::Matrix3d etrs_geo::Rotation::GetRotationMatrix(Eigen::Vector3d, float);
+template core::Tensor etrs_geo::Rotation::GetRotationMatrix(Eigen::Vector3d, float);
 template Eigen::Matrix3d etrs_geo::Rotation::GetRotationMatrixX<Eigen::Matrix3d>(float);
 template core::Tensor etrs_geo::Rotation::GetRotationMatrixX<core::Tensor>(float);
 template Eigen::Matrix3d etrs_geo::Rotation::GetRotationMatrixY<Eigen::Matrix3d>(float);

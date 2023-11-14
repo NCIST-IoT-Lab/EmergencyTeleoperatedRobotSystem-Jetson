@@ -39,6 +39,9 @@ namespace etrs::geometry {
 
         template <typename T>
         static T RemoveRotationXZ(const T &transformation, string direction);
+
+        // 旋转 DetectionResult 中的 BoundingBox 的坐标
+        static void RotateBoundingBoxes(const DetectionResultType &result, etrs::geometry::Axis axis, float angle);
     };
 
     class Translation{

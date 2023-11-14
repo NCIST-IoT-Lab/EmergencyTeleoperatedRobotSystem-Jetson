@@ -477,7 +477,6 @@ int main(int argc, char **argv) {
             // t::io::WritePointCloud("ply/test/point_cloud_1.ply", point_cloud_1);
 
             etrs::geometry::Mesh::RotateMesh(mesh, etrs::geometry::Axis::Y, -(angle / 2.0));
-            etrs::geometry::PointCloud::RotatePointCloud(point_cloud, etrs::geometry::Axis::Y, -(angle / 2.0));
 
             open3d::geometry::TriangleMesh legacy_mesh(mesh.ToLegacy());
 
@@ -501,6 +500,7 @@ int main(int argc, char **argv) {
             auto point_cloud_down = point_cloud.VoxelDownSample(voxel_size); // FIXME: 是否是VOXEL_SIZE不合适
 
             // FIXME: 旋转角度不正确
+            etrs::geometry::PointCloud::RotatePointCloud(point_cloud_down, etrs::geometry::Axis::Y, -(angle / 2.0));
             etrs::geometry::PointCloud::RotatePointCloud(point_cloud_down, etrs::geometry::Axis::X, -90);
             auto legacy_point_cloud = point_cloud_down.ToLegacy();
             if (IS_WRITE_POINT_CLOUD_FILE) {
@@ -516,6 +516,7 @@ int main(int argc, char **argv) {
             // holocom.sendMessageFromMesh(m, 800);
             etrs::det3d::ObjectDetector object_detector;
             DetectionResultType detection_result = object_detector.detectObjects(legacy_point_cloud.points_);
+            etrs::geometry::Rotation::RotateBoundingBoxes(detection_result, etrs::geometry::Axis::X, 90);   // 校正角度
             // DetectionResultType detection_result = object_detector.detectObjects(pcd.points_);
             for (auto item : detection_result) {
                 cout << "==== 物体: " << item.label << "=======" << endl;

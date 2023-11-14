@@ -9,6 +9,7 @@
 #include <Eigen/Geometry>
 #include <open3d/Open3D.h>
 
+#include "python_invoker/Types.h"
 #include "geometry/Transformation.h"
 #include "utility/Utility.h"
 

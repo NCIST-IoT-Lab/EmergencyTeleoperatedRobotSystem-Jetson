@@ -83,6 +83,7 @@ add_executable(EmergencyTeleoperatedRobotSystem
 
 add_executable(Boostt
         src/Boostt.cpp 
+        src/ObjectDetection.cpp
         src/python_invoker/PythonInvoker.cpp
         ${UTILITY}
         )
