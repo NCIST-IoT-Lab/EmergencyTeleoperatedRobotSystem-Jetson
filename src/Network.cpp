@@ -72,7 +72,6 @@ int BaseCommunicator::createServerSocket() {
 
     char ip_local[32 + 1] = {0};
     if (!getLocalIp(ip_local)) {
-        // Debug::CoutError("连接IP失败: {}", ip_local);
         Debug::CoutError(debug_messages["get_local_ip_failed"], ip_local);
         exit(0);
     }
@@ -81,19 +80,16 @@ int BaseCommunicator::createServerSocket() {
     this->server_socket_fd = socket(AF_INET, SOCK_STREAM, 0); // 创建套接字
 
     if (this->server_socket_fd < 0) {
-        // Debug::CoutError("Socket 创建失败");
         Debug::CoutError(debug_messages["socket_create_failed"]);
         exit(0);
     }
 
     if (bind(this->server_socket_fd, (struct sockaddr *)&sockaddr, sizeof(sockaddr)) != 0) { // 绑定套接字
-        // Debug::CoutError("Socket 绑定失败");
         Debug::CoutError(debug_messages["socket_bind_failed"]);
         close(this->server_socket_fd);
         exit(0);
     }
     if (listen(this->server_socket_fd, 1) != 0) { // 监听套接字
-        // Debug::CoutError("Socket 监听失败");
         Debug::CoutError(debug_messages["socket_listen_failed"]);
         close(this->server_socket_fd);
         exit(0);
@@ -106,19 +102,16 @@ void BaseCommunicator::acceptConnection(std::function<void()> onConnect) {
     socklen_t addr_len = (socklen_t)sizeof(*addr);
     memset(addr, 0, sizeof(*addr));
 
-    // Debug::CoutDebug("等待本地进程连接...");
     Debug::CoutDebug(debug_messages["wait_connection"]);
     this->fd = accept(this->server_socket_fd, (struct sockaddr *)addr, &addr_len);
 
     if (this->fd < 0) {
-        // Debug::CoutError("Socket 接受失败");
         Debug::CoutDebug(debug_messages["socket_accept_failed"]);
         close(this->server_socket_fd);
         free(addr);
         exit(0);
     } else {
-        // Debug::CoutSuccess("本地进程连接成功");
-        Debug::CoutSuccess("connect_success");
+        Debug::CoutSuccess(debug_messages["connect_success"]);
         if (onConnect != nullptr) {
             onConnect();
         }
@@ -128,8 +121,7 @@ void BaseCommunicator::acceptConnection(std::function<void()> onConnect) {
 bool BaseCommunicator::sendData(const unsigned char *send_buffer, const int send_length) {
     unique_lock<mutex> lock(this->mutex_);
     if (write(this->fd, send_buffer, send_length) < 0) {
-        // Debug::CoutError("发送消息失败");
-        Debug::CoutError("send_message_failed");
+        Debug::CoutError(debug_messages["send_message_failed"]);
         return false;
     }
     return true;
@@ -369,10 +361,10 @@ int HoloCommunicator::sendMessageFromDetectionResult(DetectionResultType detecti
     data_message.set_type(etrs::proto::DataMessage::DETECTION_RESULT);
     etrs::proto::DetectionResult *detection_result_message = data_message.mutable_detection_result();
     for (auto item : detection_result) {
-        etrs::proto::Object *object = detection_result_message->add_objects();
-        object->set_label(item.label);
-        object->set_score(item.score);
-        etrs::proto::BoundingBox *bbox = object->mutable_bbox();
+        etrs::proto::Obj *obj = detection_result_message->add_objs();
+        obj->set_label(item.label);
+        obj->set_score(item.score);
+        etrs::proto::BoundingBox *bbox = obj->mutable_bbox();
         bbox->set_x(item.bbox.x);
         bbox->set_y(item.bbox.y);
         bbox->set_z(item.bbox.z);
