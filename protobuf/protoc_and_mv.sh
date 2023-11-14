@@ -16,4 +16,5 @@ protoc -I=$PROTO_PATH --cpp_out=$CPP_PATH --csharp_out=$CSHARP_PATH $PROTO_PATH/
 
 # 压缩 C# 文件
 cd $CSHARP_PATH
-zip -r ETRS_protobuf_csharp.zip ./*
+rm ETRS_protobuf_csharp.zip
+zip -r ETRS_protobuf_csharp.zip ./*.cs

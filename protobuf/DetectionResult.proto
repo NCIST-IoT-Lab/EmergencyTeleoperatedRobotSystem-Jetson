@@ -3,10 +3,10 @@ package etrs.proto;
 
 // DetectionResult
 message DetectionResult{
-    repeated Object objects = 1;
+    repeated Obj objs = 1;
 }
 
-message Object {
+message Obj{
     string label = 1;
     BoundingBox bbox = 2;
     float score = 3;
