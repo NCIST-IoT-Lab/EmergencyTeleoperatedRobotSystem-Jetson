@@ -11,13 +11,13 @@ namespace etrs_geo = etrs::geometry;
 namespace o3d_geo = open3d::geometry;
 
 template <typename T>
-void etrs_geo::Mesh::RotateMesh(T &point_cloud, etrs_geo::Axis axis, float angle) {
+void etrs_geo::Mesh::RotateMesh(T &point_cloud, etrs_geo::Axis axis, double angle) {
     Debug::CoutError("RotateMesh: 模板T类型错误，只能为open3d::geometry::TriangleMesh或t::geometry::TriangleMesh");
 }
 
 template <>
 void etrs_geo::Mesh::RotateMesh<o3d_geo::TriangleMesh>(o3d_geo::TriangleMesh &point_cloud,
-                                                                etrs_geo::Axis axis, float angle) {
+                                                                etrs_geo::Axis axis, double angle) {
     if (axis == etrs_geo::Axis::X) {
         point_cloud.Rotate(etrs_geo::Rotation::GetRotationMatrixX<Eigen::Matrix3d>(angle), Eigen::Vector3d::Zero());
     } else if (axis == etrs_geo::Axis::Y) {
@@ -28,7 +28,7 @@ void etrs_geo::Mesh::RotateMesh<o3d_geo::TriangleMesh>(o3d_geo::TriangleMesh &po
 }
 template <>
 void etrs_geo::Mesh::RotateMesh<t::geometry::TriangleMesh>(t::geometry::TriangleMesh &point_cloud, etrs_geo::Axis axis,
-                                                           float angle) {
+                                                           double angle) {
     if (axis == etrs_geo::Axis::X) {
         point_cloud.Rotate(etrs_geo::Rotation::GetRotationMatrixX<core::Tensor>(angle),
                            core::Tensor::Zeros({3}, core::Dtype::Float64, core::Device("CPU:0")));
@@ -42,5 +42,5 @@ void etrs_geo::Mesh::RotateMesh<t::geometry::TriangleMesh>(t::geometry::Triangle
 }
 
 // 显式实例化模板函数
-template void etrs_geo::Mesh::RotateMesh(o3d_geo::TriangleMesh &, etrs_geo::Axis, float);
-template void etrs_geo::Mesh::RotateMesh(t::geometry::TriangleMesh &, etrs_geo::Axis, float);
+template void etrs_geo::Mesh::RotateMesh(o3d_geo::TriangleMesh &, etrs_geo::Axis, double);
+template void etrs_geo::Mesh::RotateMesh(t::geometry::TriangleMesh &, etrs_geo::Axis, double);

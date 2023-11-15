@@ -25,11 +25,11 @@ namespace etrs::geometry {
 
         // 下采样点云
         template <typename T>
-        static void DownSamplePointCloud(T &point_cloud, float voxel_size);
+        static void DownSamplePointCloud(T &point_cloud, double voxel_size);
 
         // 旋转点云
         template <typename T>
-        static void RotatePointCloud(T &point_cloud, etrs::geometry::Axis axis, float angle);
+        static void RotatePointCloud(T &point_cloud, etrs::geometry::Axis axis, double angle);
 
         // 将点云数量微调到某个值的倍数（删点）
         template <typename T>

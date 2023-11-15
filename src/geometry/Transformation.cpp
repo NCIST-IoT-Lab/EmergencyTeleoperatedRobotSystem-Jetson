@@ -10,7 +10,7 @@ using namespace etrs;
 namespace etrs_geo = etrs::geometry;
 
 template <typename T>
-T etrs_geo::Rotation::GetRotationMatrix(Eigen::Vector3d axis_vector, float angle) {
+T etrs_geo::Rotation::GetRotationMatrix(Eigen::Vector3d axis_vector, double angle) {
     // auto matrix = Eigen::AngleAxisd(MathUtils::DegreeToRadian(angle), Eigen::Vector3d(1, 0, 0)).toRotationMatrix();
     // if constexpr (std::is_same<T, Eigen::Matrix3d>::value) { // 判断T是否为Eigen::Matrix3d类型
     //     return matrix;
@@ -22,31 +22,31 @@ T etrs_geo::Rotation::GetRotationMatrix(Eigen::Vector3d axis_vector, float angle
 }
 
 template <>
-Eigen::Matrix3d etrs_geo::Rotation::GetRotationMatrix(Eigen::Vector3d axis_vector, float angle) {
+Eigen::Matrix3d etrs_geo::Rotation::GetRotationMatrix(Eigen::Vector3d axis_vector, double angle) {
     return Eigen::AngleAxisd(MathUtils::DegreeToRadian(angle), axis_vector).toRotationMatrix();
 }
 
 template <>
-core::Tensor etrs_geo::Rotation::GetRotationMatrix(Eigen::Vector3d axis_vector, float angle) {
+core::Tensor etrs_geo::Rotation::GetRotationMatrix(Eigen::Vector3d axis_vector, double angle) {
     return core::eigen_converter::EigenMatrixToTensor(
         Eigen::AngleAxisd(MathUtils::DegreeToRadian(angle), axis_vector).toRotationMatrix());
 }
 
 // 绕X轴旋转
 template <typename T>
-T etrs_geo::Rotation::GetRotationMatrixX(float angle) {
+T etrs_geo::Rotation::GetRotationMatrixX(double angle) {
     return GetRotationMatrix<T>(Eigen::Vector3d(1, 0, 0), angle);
 }
 
 // 绕Y轴旋转
 template <typename T>
-T etrs_geo::Rotation::GetRotationMatrixY(float angle) {
+T etrs_geo::Rotation::GetRotationMatrixY(double angle) {
     return GetRotationMatrix<T>(Eigen::Vector3d(0, 1, 0), angle);
 }
 
 // 绕Z轴旋转
 template <typename T>
-T etrs_geo::Rotation::GetRotationMatrixZ(float angle) {
+T etrs_geo::Rotation::GetRotationMatrixZ(double angle) {
     return GetRotationMatrix<T>(Eigen::Vector3d(0, 0, 1), angle);
 }
 
@@ -56,7 +56,6 @@ T etrs_geo::Rotation::RemoveRotationXZ(const T &transformation, string direction
     return;
 }
 
-// TODO: 能否优化性能 constexpr？
 template <>
 Eigen::Matrix4d etrs_geo::Rotation::RemoveRotationXZ(const Eigen::Matrix4d &transformation, string direction) {
     Eigen::Vector3d euler_angles = transformation.block<3, 3>(0, 0).eulerAngles(2, 1, 0);
@@ -99,8 +98,8 @@ T etrs_geo::Translation::RemoveTranslationY(const T &transformation) {
     return;
 }
 
-void etrs_geo::Rotation::RotateBoundingBoxes(DetectionResultType &result, etrs::geometry::Axis axis, float angle) {
-    Eigen::Martix3d R;
+void etrs_geo::Rotation::RotateBoundingBoxes(DetectionResultType &result, etrs::geometry::Axis axis, double angle) {
+    Eigen::Matrix3d R;
     if (axis == etrs_geo::Axis::X) {
         R = GetRotationMatrixX<Eigen::Matrix3d>(angle);
     } else if (axis == etrs_geo::Axis::Y) {
@@ -136,14 +135,14 @@ double etrs_geo::Translation::CalculateTranslationNorm(const core::Tensor &trans
 }
 
 // 显式实例化模板函数
-template Eigen::Matrix3d etrs_geo::Rotation::GetRotationMatrix(Eigen::Vector3d, float);
-template core::Tensor etrs_geo::Rotation::GetRotationMatrix(Eigen::Vector3d, float);
-template Eigen::Matrix3d etrs_geo::Rotation::GetRotationMatrixX<Eigen::Matrix3d>(float);
-template core::Tensor etrs_geo::Rotation::GetRotationMatrixX<core::Tensor>(float);
-template Eigen::Matrix3d etrs_geo::Rotation::GetRotationMatrixY<Eigen::Matrix3d>(float);
-template core::Tensor etrs_geo::Rotation::GetRotationMatrixY<core::Tensor>(float);
-template Eigen::Matrix3d etrs_geo::Rotation::GetRotationMatrixZ<Eigen::Matrix3d>(float);
-template core::Tensor etrs_geo::Rotation::GetRotationMatrixZ<core::Tensor>(float);
+template Eigen::Matrix3d etrs_geo::Rotation::GetRotationMatrix(Eigen::Vector3d, double);
+template core::Tensor etrs_geo::Rotation::GetRotationMatrix(Eigen::Vector3d, double);
+template Eigen::Matrix3d etrs_geo::Rotation::GetRotationMatrixX<Eigen::Matrix3d>(double);
+template core::Tensor etrs_geo::Rotation::GetRotationMatrixX<core::Tensor>(double);
+template Eigen::Matrix3d etrs_geo::Rotation::GetRotationMatrixY<Eigen::Matrix3d>(double);
+template core::Tensor etrs_geo::Rotation::GetRotationMatrixY<core::Tensor>(double);
+template Eigen::Matrix3d etrs_geo::Rotation::GetRotationMatrixZ<Eigen::Matrix3d>(double);
+template core::Tensor etrs_geo::Rotation::GetRotationMatrixZ<core::Tensor>(double);
 template Eigen::Matrix4d etrs_geo::Rotation::RemoveRotationXZ<Eigen::Matrix4d>(const Eigen::Matrix4d &, string);
 template core::Tensor etrs_geo::Rotation::RemoveRotationXZ<core::Tensor>(const core::Tensor &, string);
 template Eigen::Matrix4d etrs_geo::Translation::RemoveTranslationY<Eigen::Matrix4d>(const Eigen::Matrix4d &);

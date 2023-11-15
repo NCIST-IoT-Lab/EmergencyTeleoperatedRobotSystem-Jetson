@@ -11,7 +11,7 @@ namespace etrs_geo = etrs::geometry;
 namespace o3d_geo = open3d::geometry;
 
 template <typename T>
-void etrs_geo::PointCloud::DownSamplePointCloud(T &point_cloud, float voxel_size) {
+void etrs_geo::PointCloud::DownSamplePointCloud(T &point_cloud, double voxel_size) {
     if (voxel_size <= 0) {
         Debug::CoutError("DownSamplePointCloud: voxel_size 必须大于 0");
         return;
@@ -20,13 +20,13 @@ void etrs_geo::PointCloud::DownSamplePointCloud(T &point_cloud, float voxel_size
 }
 
 template <typename T>
-void etrs_geo::PointCloud::RotatePointCloud(T &point_cloud, etrs_geo::Axis axis, float angle) {
+void etrs_geo::PointCloud::RotatePointCloud(T &point_cloud, etrs_geo::Axis axis, double angle) {
     Debug::CoutError("RotatePointCloud: 模板T类型错误，只能为open3d::geometry::PointCloud或t::geometry::PointCloud");
 }
 
 template <>
 void etrs_geo::PointCloud::RotatePointCloud<o3d_geo::PointCloud>(o3d_geo::PointCloud &point_cloud, etrs_geo::Axis axis,
-                                                                 float angle) {
+                                                                 double angle) {
     if (axis == etrs_geo::Axis::X) {
         point_cloud.Rotate(etrs_geo::Rotation::GetRotationMatrixX<Eigen::Matrix3d>(angle), Eigen::Vector3d::Zero());
     } else if (axis == etrs_geo::Axis::Y) {
@@ -38,7 +38,7 @@ void etrs_geo::PointCloud::RotatePointCloud<o3d_geo::PointCloud>(o3d_geo::PointC
 
 template <>
 void etrs_geo::PointCloud::RotatePointCloud<t::geometry::PointCloud>(t::geometry::PointCloud &point_cloud,
-                                                                     etrs_geo::Axis axis, float angle) {
+                                                                     etrs_geo::Axis axis, double angle) {
     if (axis == etrs_geo::Axis::X) {
         point_cloud.Rotate(etrs_geo::Rotation::GetRotationMatrixX<core::Tensor>(angle),
                            core::Tensor::Zeros({3}, core::Dtype::Float64, core::Device("CPU:0")));
@@ -62,10 +62,10 @@ void etrs_geo::PointCloud::AdjustPointCloudNum(T &point_cloud, int num_multiple)
 }
 
 // 显式实例化模板函数
-template void etrs_geo::PointCloud::DownSamplePointCloud<o3d_geo::PointCloud>(o3d_geo::PointCloud &, float);
-template void etrs_geo::PointCloud::DownSamplePointCloud<t::geometry::PointCloud>(t::geometry::PointCloud &, float);
-template void etrs_geo::PointCloud::RotatePointCloud<o3d_geo::PointCloud>(o3d_geo::PointCloud &, etrs_geo::Axis, float);
+template void etrs_geo::PointCloud::DownSamplePointCloud<o3d_geo::PointCloud>(o3d_geo::PointCloud &, double);
+template void etrs_geo::PointCloud::DownSamplePointCloud<t::geometry::PointCloud>(t::geometry::PointCloud &, double);
+template void etrs_geo::PointCloud::RotatePointCloud<o3d_geo::PointCloud>(o3d_geo::PointCloud &, etrs_geo::Axis, double);
 template void etrs_geo::PointCloud::RotatePointCloud<t::geometry::PointCloud>(t::geometry::PointCloud &, etrs_geo::Axis,
-                                                                              float);
+                                                                              double);
 template void etrs_geo::PointCloud::AdjustPointCloudNum<o3d_geo::PointCloud>(o3d_geo::PointCloud &, int);
 template void etrs_geo::PointCloud::AdjustPointCloudNum<t::geometry::PointCloud>(t::geometry::PointCloud &, int);

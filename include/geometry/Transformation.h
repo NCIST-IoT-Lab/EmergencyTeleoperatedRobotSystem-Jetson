@@ -9,6 +9,7 @@
 #include <Eigen/Geometry>
 #include <open3d/Open3D.h>
 
+#include "python_invoker/Types.h"
 #include "utility/Utility.h"
 
 using namespace std;
@@ -23,25 +24,25 @@ namespace etrs::geometry {
     public:
         // 绕任意轴旋转
         template <typename T>
-        static T GetRotationMatrix(Eigen::Vector3d axis_vector, float angle);
+        static T GetRotationMatrix(Eigen::Vector3d axis_vector, double angle);
 
         // 绕X轴旋转
         template <typename T>
-        static T GetRotationMatrixX(float angle);
+        static T GetRotationMatrixX(double angle);
 
         // 绕Y轴旋转
         template <typename T>
-        static T GetRotationMatrixY(float angle);
+        static T GetRotationMatrixY(double angle);
 
         // 绕Z轴旋转
         template <typename T>
-        static T GetRotationMatrixZ(float angle);
+        static T GetRotationMatrixZ(double angle);
 
         template <typename T>
         static T RemoveRotationXZ(const T &transformation, string direction);
 
         // 旋转 DetectionResult 中的 BoundingBox 的坐标
-        static void RotateBoundingBoxes(const DetectionResultType &result, etrs::geometry::Axis axis, float angle);
+        static void RotateBoundingBoxes(DetectionResultType &result, etrs::geometry::Axis axis, double angle);
     };
 
     class Translation{

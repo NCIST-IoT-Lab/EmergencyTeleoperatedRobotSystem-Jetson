@@ -12,13 +12,13 @@
 using namespace std;
 
 struct BoundingBoxType {
-    float x;
-    float y;
-    float z;
-    float l;
-    float w;
-    float h;
-    float yaw;
+    double x;
+    double y;
+    double z;
+    double l;
+    double w;
+    double h;
+    double yaw;
 
     BoundingBoxType() {
         x = 0;
@@ -30,7 +30,7 @@ struct BoundingBoxType {
         yaw = 0;
     }
 
-    BoundingBoxType(float x, float y, float z, float l, float w, float h, float yaw) {
+    BoundingBoxType(double x, double y, double z, double l, double w, double h, double yaw) {
         this->x = x;
         this->y = y;
         this->z = z;
@@ -44,7 +44,7 @@ struct BoundingBoxType {
 struct DetectionObjectType {
     string label;
     BoundingBoxType bbox;
-    float score;
+    double score;
 
     DetectionObjectType() {
         label = "";
@@ -52,7 +52,7 @@ struct DetectionObjectType {
         score = 0;
     }
 
-    DetectionObjectType(string label, BoundingBoxType bbox, float score) {
+    DetectionObjectType(string label, BoundingBoxType bbox, double score) {
         this->label = label;
         this->bbox = bbox;
         this->score = score;

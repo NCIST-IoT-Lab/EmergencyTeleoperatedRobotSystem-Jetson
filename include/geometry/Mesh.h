@@ -21,7 +21,7 @@ namespace etrs::geometry {
     class Mesh {
     public:
         template <typename T>
-        static void RotateMesh(T &point_cloud, etrs::geometry::Axis axis, float angle);
+        static void RotateMesh(T &point_cloud, etrs::geometry::Axis axis, double angle);
     };
 
 } // namespace etrs::geometry
